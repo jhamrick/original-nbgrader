@@ -1,8 +1,28 @@
 import nose
 import types
 import os
+import sys
 
+from collections import defaultdict
+from nose.tools import make_decorator
 from IPython.core.magic import Magics, magics_class, cell_magic
+
+
+class score(object):
+
+    grades = defaultdict(float)
+    max_grades = defaultdict(float)
+
+    def __init__(self, problem, points):
+        self.problem = problem
+        self.points = points
+        self.max_grades[self.problem] += self.points
+
+    def __call__(self, f):
+        def wrapped_f(*args):
+            f(*args)
+            self.grades[self.problem] += self.points
+        return make_decorator(f)(wrapped_f)
 
 
 @magics_class
@@ -10,10 +30,9 @@ class NoseGraderMagic(Magics):
 
     @cell_magic
     def autograde(self, line, cell):
-        cell_code = compile(cell, "<autograder>", "exec")
-
         ip = get_ipython()
-        ip.run_code(cell_code)
+        ip.run_cell("from autograder import score")
+        ip.run_cell(cell)
 
         test_module = types.ModuleType('test_module')
         test_module.__dict__.update(ip.user_ns)
@@ -33,6 +52,13 @@ class NoseGraderMagic(Magics):
 
         nose.core.TestProgram(
             argv=argv, suite=tests, exit=False, config=config)
+
+        sys.stderr.flush()
+        sys.stdout.flush()
+        grades = dict(test_module.__dict__['score'].grades)
+        max_grades = dict(test_module.__dict__['score'].max_grades)
+        print "grades:", grades
+        print "max_grades:", max_grades
 
 
 def load_ipython_extension(ipython):

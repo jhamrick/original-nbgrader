@@ -15,6 +15,23 @@ class Grader(ExecutePreprocessor):
         new_cells = [c for c in cells if c.metadata.get('grade', False)]
         worksheet.cells = new_cells
 
+    def _load_autograder(self, cells):
+        with open(self.autograder, 'r') as fh:
+            autograder_code = "%%autograde\n\n"
+            autograder_code += fh.read().strip()
+
+        cells.append(new_heading_cell(
+            source="Autograder", level=self.heading_level))
+        cells.append(new_code_cell(input="%load_ext autograder"))
+        cells.append(new_code_cell(input=autograder_code))
+
+        # cells.append(new_heading_cell(
+        #     source="Coding scores", level=2))
+        # cells.append(new_code_cell(
+        #     input="grades = dict(grades)\ngrades"))
+        # cells.append(new_code_cell(
+        #     input="import json; json.dumps(grades)"))
+
     def preprocess(self, nb, resources):
         if len(nb.worksheets) != 1:
             raise ValueError("cannot handle more than one worksheet")
@@ -27,23 +44,9 @@ class Grader(ExecutePreprocessor):
 
         # load autograder
         if self.autograder:
-            with open(self.autograder, 'r') as fh:
-                autograder_code = "%%autograde\n\n{}".format(
-                    fh.read().strip())
-
-            cells = nb.worksheets[0].cells
-            cells.append(new_heading_cell(
-                source="Autograder", level=self.heading_level))
-            cells.append(new_code_cell(input="%load_ext autograder"))
-            cells.append(new_code_cell(input=autograder_code))
-
-            # nb.worksheets[0].cells.append(new_heading_cell(
-            #     source="Coding scores", level=2))
-            # nb.worksheets[0].cells.append(new_code_cell(
-            #     input="grades = dict(grades)\ngrades"))
-            # nb.worksheets[0].cells.append(new_code_cell(
-            #     input="import json; json.dumps(grades)"))
+            self._load_autograder(nb.worksheets[0].cells)
 
         # execute all the cells
         nb, resources = super(Grader, self).preprocess(nb, resources)
+
         return nb, resources
