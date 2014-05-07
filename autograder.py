@@ -55,10 +55,12 @@ class NoseGraderMagic(Magics):
 
         sys.stderr.flush()
         sys.stdout.flush()
-        grades = dict(test_module.__dict__['score'].grades)
-        max_grades = dict(test_module.__dict__['score'].max_grades)
-        print "grades:", grades
-        print "max_grades:", max_grades
+        grades = test_module.__dict__['score'].grades
+        max_grades = test_module.__dict__['score'].max_grades
+
+        for problem in max_grades:
+            print "{0} : {1:.1f} / {2:.1f} points".format(
+                problem, grades[problem], max_grades[problem])
 
 
 def load_ipython_extension(ipython):
