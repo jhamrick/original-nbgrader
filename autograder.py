@@ -10,6 +10,15 @@ from IPython.core.magic import Magics, magics_class, cell_magic
 
 
 class score(object):
+    """Decorator for marking the problem an autograder test corresponds
+    to, as well as the number of points that should be earned if the
+    test passes.
+
+    The `grades` and `max_grades` dictionaries should be reset (using
+    `score.reset()`) before the autograding code is actually run. This
+    will happen automatically if the `%%autograde` magic is used.
+
+    """
 
     grades = defaultdict(float)
     max_grades = defaultdict(float)
@@ -36,40 +45,43 @@ class NoseGraderMagic(Magics):
 
     @cell_magic
     def autograde(self, line, cell):
+        # get the ipython user session, import the score decorator,
+        # and then run the autograding code (which will load the tests
+        # into the namespace)
         ip = get_ipython()
         ip.run_cell("from autograder import score; score.reset()")
         ip.run_cell(cell)
 
+        # create the test module for nose
         test_module = types.ModuleType('test_module')
         test_module.__dict__.update(ip.user_ns)
 
+        # change the test name template to use "grade" instead of
+        # "test" (which is the default)
         env = os.environ
         env['NOSE_TESTMATCH'] = r'(?:^|[\b_\.%s-])[Gg]rade' % os.sep
-        cfg_files = nose.config.all_config_files()
-        mgr = nose.plugins.manager.DefaultPluginManager()
-        config = nose.config.Config(env=env, files=cfg_files, plugins=mgr)
 
+        # load user config files
+        cfg_files = nose.config.all_config_files()
+
+        # create a plugin manager
+        mgr = nose.plugins.manager.DefaultPluginManager()
+
+        # create the nose configuration object, and load the tests
+        config = nose.config.Config(env=env, files=cfg_files, plugins=mgr)
         loader = nose.loader.TestLoader(config=config)
         tests = loader.loadTestsFromModule(test_module)
-        argv = [
-            "autograder",
-            "--verbose",
-        ]
 
+        # run the tests
         nose.core.TestProgram(
-            argv=argv, suite=tests, exit=False, config=config)
+            argv=["autograder", "--verbose"],
+            suite=tests, exit=False, config=config)
 
-        sys.stderr.flush()
-        sys.stdout.flush()
-        grades = test_module.__dict__['score'].grades
-        max_grades = test_module.__dict__['score'].max_grades
-
+        # create a pandas dataframe of the scores, and return it
         scores = pd.DataFrame({
-            'score': dict(grades),
-            'max_score': dict(max_grades)
-        })
-        scores = scores[['score', 'max_score']]
-
+            'score': test_module.__dict__['score'].grades,
+            'max_score': test_module.__dict__['score'].max_grades
+        }, columns=['score', 'max_score'])
         return scores
 
 
