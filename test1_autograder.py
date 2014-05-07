@@ -1,11 +1,25 @@
-@score(problem="hello", points=1.0)
-def grade_hello():
-    """Example passing test"""
-    msg = hello("Jessica")
-    assert msg == "Hello, Jessica!"
+from nose.tools import eq_ as assert_eq
 
-@score(problem="hello", points=1.0)
+@score(problem="hello", points=0.5)
+def grade_hello1():
+    """Grade 'hello' with input 'Jessica'"""
+    msg = hello("Jessica")
+    assert_eq(msg, "Hello, Jessica!")
+
+@score(problem="hello", points=0.5)
 def grade_hello2():
-    """Example failing test"""
-    msg = hello("Jesica")
-    assert msg == "Hello, Jessica!"
+    """Grade 'hello' with input 'Python'"""
+    msg = hello("Python")
+    assert_eq(msg, "Hello, Python!")
+
+@score(problem="goodbye", points=0.5)
+def grade_goodbye1():
+    """Grade 'goodbye' with input 'Jessica'"""
+    msg = goodbye("Jessica")
+    assert_eq(msg, "Goodbye, Jessica")
+
+@score(problem="goodbye", points=0.5)
+def grade_goodbye2():
+    """Grade 'goodbye' with input 'Python'"""
+    msg = goodbye("Python")
+    assert_eq(msg, "Goodbye, Python")

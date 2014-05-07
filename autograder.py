@@ -69,7 +69,6 @@ class NoseGraderMagic(Magics):
             'max_score': dict(max_grades)
         })
         scores = scores[['score', 'max_score']]
-        scores.index.name = 'problem'
 
         return scores
 
