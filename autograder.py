@@ -2,6 +2,7 @@ import nose
 import types
 import os
 import sys
+import pandas as pd
 
 from collections import defaultdict
 from nose.tools import make_decorator
@@ -24,6 +25,11 @@ class score(object):
             self.grades[self.problem] += self.points
         return make_decorator(f)(wrapped_f)
 
+    @classmethod
+    def reset(cls):
+        cls.grades = defaultdict(float)
+        cls.max_grades = defaultdict(float)
+
 
 @magics_class
 class NoseGraderMagic(Magics):
@@ -31,7 +37,7 @@ class NoseGraderMagic(Magics):
     @cell_magic
     def autograde(self, line, cell):
         ip = get_ipython()
-        ip.run_cell("from autograder import score")
+        ip.run_cell("from autograder import score; score.reset()")
         ip.run_cell(cell)
 
         test_module = types.ModuleType('test_module')
@@ -58,9 +64,14 @@ class NoseGraderMagic(Magics):
         grades = test_module.__dict__['score'].grades
         max_grades = test_module.__dict__['score'].max_grades
 
-        for problem in max_grades:
-            print "{0} : {1:.1f} / {2:.1f} points".format(
-                problem, grades[problem], max_grades[problem])
+        scores = pd.DataFrame({
+            'score': dict(grades),
+            'max_score': dict(max_grades)
+        })
+        scores = scores[['score', 'max_score']]
+        scores.index.name = 'problem'
+
+        return scores
 
 
 def load_ipython_extension(ipython):
