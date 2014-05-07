@@ -9,5 +9,6 @@ c.Exporter.preprocessors = ['nbgrader.Grader']
 c.InteractiveShellApp.exec_lines = []
 
 c.Grader.assignment = "test1"
-c.Grader.autograder = "test1_autograder.py"
+c.Grader.autograder_file = "test1_autograder.py"
+c.Grader.scores_file = "test1_scores.json"
 c.Grader.heading_level = 1

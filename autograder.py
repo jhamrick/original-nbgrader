@@ -1,7 +1,6 @@
 import nose
 import types
 import os
-import sys
 import pandas as pd
 
 from collections import defaultdict
@@ -38,6 +37,19 @@ class score(object):
     def reset(cls):
         cls.grades = defaultdict(float)
         cls.max_grades = defaultdict(float)
+
+    @classmethod
+    def as_dataframe(cls):
+        df = pd.DataFrame({
+            'score': cls.grades,
+            'max_score': cls.max_grades
+        }, columns=['score', 'max_score'])
+        return df
+
+    @classmethod
+    def as_dict(cls):
+        df = cls.as_dataframe()
+        return df.T.to_dict()
 
 
 @magics_class
@@ -78,11 +90,7 @@ class NoseGraderMagic(Magics):
             suite=tests, exit=False, config=config)
 
         # create a pandas dataframe of the scores, and return it
-        scores = pd.DataFrame({
-            'score': test_module.__dict__['score'].grades,
-            'max_score': test_module.__dict__['score'].max_grades
-        }, columns=['score', 'max_score'])
-        return scores
+        return test_module.__dict__['score'].as_dataframe()
 
 
 def load_ipython_extension(ipython):
