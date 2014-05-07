@@ -87,12 +87,14 @@ The preprocessor does several things:
 1. Extracts cells from the given notebook that are marked for grading
    (see [Creating an assignment](#Creating-an-assignment)).
 2. Reads in grading code from a given file (specified via the
-   `c.Grader.autograder` traitlet).
+   `c.Grader.autograder_file` traitlet).
 3. Adds new cells at the bottom of the notebook to load the
    `autograder` extension and to use the autograde magic along with
    the grading code loaded above.
-4. Runs all cells, and saves the output.
-5. Saves out the new notebook.
+4. Runs all cells, and updates the notebook with the output.
+5. Optionally saves out the scores to a file (specified via the
+   `c.Grader.scores_file` traitlet).
+6. Saves out the new notebook.
 
 To run the preprocessor, create a file called
 `ipython_nbconvert_config.py` in the same directory as your
