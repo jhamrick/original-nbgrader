@@ -44,6 +44,7 @@ class score(object):
             'score': cls.grades,
             'max_score': cls.max_grades
         }, columns=['score', 'max_score'])
+        df.fillna(0, inplace=True)
         return df
 
     @classmethod
