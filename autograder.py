@@ -46,7 +46,7 @@ class score(object):
             'score': cls.grades,
             'max_score': cls.max_grades
         }, columns=['score', 'max_score'])
-        df.fillna(0, inplace=True)
+        df = df.dropna()
         return df
 
     @classmethod
@@ -101,8 +101,7 @@ class NoseGraderMagic(Magics):
 
         # create a pandas dataframe of the scores, and return it
         if 'score' in test_module.__dict__:
-            df = test_module.__dict__['score'].as_dataframe()
-            return df.ix[[line]]
+            return test_module.__dict__['score'].as_dataframe()
 
     @line_magic
     def set_autograder(self, line):

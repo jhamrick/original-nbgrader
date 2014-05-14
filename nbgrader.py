@@ -138,4 +138,5 @@ class Grader(ExecutePreprocessor):
     def _add_grading_cell(self, cells, heading):
         if self.autograder_file and heading in self.problems:
             cells.append(new_code_cell(
-                input="%grade {}".format(heading)))
+                input="%grade {}".format(heading),
+                metadata={"scores": True}))
