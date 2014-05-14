@@ -62,9 +62,10 @@ class NoseGraderMagic(Magics):
     def grade(self, line, cell=None):
         ip = get_ipython()
         if cell is not None:
+            ip.run_cell("__score__.reset(); score = __score__")
             ip.run_cell(cell)
         else:
-            ip.run_cell("from autograder import score; score.reset()")
+            ip.run_cell("__score__.reset(); score = __score__")
             ip.run_cell(self.autograder_code)
 
         # create the test module for nose
@@ -97,8 +98,8 @@ class NoseGraderMagic(Magics):
             suite=tests, exit=False, config=config)
 
         # create a pandas dataframe of the scores, and return it
-        if 'score' in test_module.__dict__:
-            return test_module.__dict__['score'].as_dataframe()
+        if '__score__' in test_module.__dict__:
+            return test_module.__dict__['__score__'].as_dataframe()
 
     @line_magic
     def load_autograder(self, line):
@@ -108,3 +109,4 @@ class NoseGraderMagic(Magics):
 
 def load_ipython_extension(ipython):
     ipython.register_magics(NoseGraderMagic)
+    ipython.run_cell("from autograder import score as __score__")

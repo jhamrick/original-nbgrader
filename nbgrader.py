@@ -71,7 +71,7 @@ class Grader(ExecutePreprocessor):
         # (serialized) raw data
         self.shell.execute(
             "from IPython.kernel.zmq.datapub import publish_data\n"
-            "publish_data(score.as_dict())")
+            "publish_data(__score__.as_dict())")
         self.shell.get_msg(timeout=20)
 
         # read the message with the data, and unserialize it
