@@ -5,7 +5,9 @@ import pandas as pd
 
 from collections import defaultdict
 from nose.tools import make_decorator
-from IPython.core.magic import Magics, magics_class, cell_magic
+from nose.plugins.attrib import attr, AttributeSelector
+from IPython.core.magic import Magics, magics_class
+from IPython.core.magic import line_magic, line_cell_magic
 
 
 class score(object):
@@ -15,7 +17,7 @@ class score(object):
 
     The `grades` and `max_grades` dictionaries should be reset (using
     `score.reset()`) before the autograding code is actually run. This
-    will happen automatically if the `%%autograde` magic is used.
+    will happen automatically if the `%%grade` magic is used.
 
     """
 
@@ -31,7 +33,7 @@ class score(object):
         def wrapped_f(*args):
             f(*args)
             self.grades[self.problem] += self.points
-        return make_decorator(f)(wrapped_f)
+        return attr(problem=self.problem)(make_decorator(f)(wrapped_f))
 
     @classmethod
     def reset(cls):
@@ -56,14 +58,17 @@ class score(object):
 @magics_class
 class NoseGraderMagic(Magics):
 
-    @cell_magic
-    def autograde(self, line, cell):
-        # get the ipython user session, import the score decorator,
-        # and then run the autograding code (which will load the tests
-        # into the namespace)
+    @line_cell_magic
+    def grade(self, line, cell=None):
         ip = get_ipython()
-        ip.run_cell("from autograder import score; score.reset()")
-        ip.run_cell(cell)
+        if cell is not None:
+            ip.run_cell(cell)
+        else:
+            with open(self.autograder_path, "r") as fh:
+                code = fh.read()
+
+            ip.run_cell("from autograder import score")
+            ip.run_cell(code)
 
         # create the test module for nose
         test_module = types.ModuleType('test_module')
@@ -78,7 +83,11 @@ class NoseGraderMagic(Magics):
         cfg_files = nose.config.all_config_files()
 
         # create a plugin manager
-        mgr = nose.plugins.manager.DefaultPluginManager()
+        plug = AttributeSelector()
+        plug.attribs = [[("problem", line)]]
+        plug.enabled = True
+        mgr = nose.plugins.manager.DefaultPluginManager(
+            plugins=[plug])
 
         # create the nose configuration object, and load the tests
         config = nose.config.Config(env=env, files=cfg_files, plugins=mgr)
@@ -91,7 +100,13 @@ class NoseGraderMagic(Magics):
             suite=tests, exit=False, config=config)
 
         # create a pandas dataframe of the scores, and return it
-        return test_module.__dict__['score'].as_dataframe()
+        if 'score' in test_module.__dict__:
+            df = test_module.__dict__['score'].as_dataframe()
+            return df.ix[[line]]
+
+    @line_magic
+    def set_autograder(self, line):
+        self.autograder_path = line
 
 
 def load_ipython_extension(ipython):
