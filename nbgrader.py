@@ -1,8 +1,9 @@
 import json
 
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
-from IPython.utils.traitlets import Unicode, Int
-from IPython.nbformat.current import new_code_cell
+from IPython.utils.traitlets import Unicode, Int, Bool
+from IPython.nbformat.current import new_code_cell, new_heading_cell, \
+    new_text_cell
 from IPython.kernel.zmq import serialize
 
 try:
@@ -18,6 +19,9 @@ class Grader(ExecutePreprocessor):
         "", config=True, info_text="Assignment name")
     autograder_file = Unicode(
         "", config=True, info_text="Path to file containing autograding code")
+    include_code = Bool(
+        True, config=True,
+        info_test="Whether to include autograder code in the graded notebook")
     scores_file = Unicode(
         "", config=True, info_text="Path to save scores")
     heading_level = Int(
@@ -116,16 +120,31 @@ class Grader(ExecutePreprocessor):
                 c.metadata['level'] = heading
                 new_cells.append(c)
 
+        self._add_autograder_code(new_cells)
+
         worksheet.cells = new_cells
+
+    def _add_autograder_code(self, cells):
+        if not self.autograder_code:
+            return
+
+        code = "```python\n{}\n```".format(self.autograder_code)
+        cells.append(new_heading_cell(
+            source="Autograder", level=self.heading_level))
+        cells.append(new_text_cell(
+            'markdown',
+            source="The following code was used to grade this assignment:"))
+        cells.append(new_text_cell('markdown', source=code))
 
     def _load_autograder(self, cells):
         if not self.autograder_file:
             return
 
         with open(self.autograder_file, "r") as fh:
-            code = compile(fh.read(), "autograder", "exec")
+            self.autograder_code = fh.read()
 
         ns = {}
+        code = compile(self.autograder_code, "autograder", "exec")
         exec "from autograder import score" in ns
         exec code in ns
         self.problems = ns["score"].max_grades.keys()
