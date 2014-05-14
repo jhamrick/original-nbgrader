@@ -2,7 +2,7 @@ import json
 
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Unicode, Int
-from IPython.nbformat.current import new_heading_cell, new_code_cell
+from IPython.nbformat.current import new_code_cell
 from IPython.kernel.zmq import serialize
 
 try:
@@ -17,7 +17,7 @@ class Grader(ExecutePreprocessor):
     assignment = Unicode(
         "", config=True, info_text="Assignment name")
     autograder_file = Unicode(
-        "", config=True, info_text="Path to autograding code")
+        "", config=True, info_text="Path to file containing autograding code")
     scores_file = Unicode(
         "", config=True, info_text="Path to save scores")
     heading_level = Int(
@@ -32,9 +32,6 @@ class Grader(ExecutePreprocessor):
 
         # set notebook name, and clear other metadata
         nb.metadata = {"name": self.assignment}
-
-        # load autograder
-        self._load_autograder(nb.worksheets[0].cells)
 
         # execute all the cells
         nb, resources = super(Grader, self).preprocess(nb, resources)
@@ -87,45 +84,58 @@ class Grader(ExecutePreprocessor):
 
         return score_data
 
-    @staticmethod
-    def _filter_grading_cells(worksheet):
+    def _filter_grading_cells(self, worksheet):
         """Filters out cells from the worksheet that do not have "grade"
         metadata set to True.
 
         """
         cells = worksheet.cells
-        new_cells = [c for c in cells if c.metadata.get('grade', False)]
+        new_cells = []
+        levels = []
+
+        self._load_autograder(new_cells)
+
+        for c in cells:
+            heading = "/".join([x[1] for x in levels])
+            if c.cell_type == 'heading':
+                if "/" in c.source:
+                    raise ValueError("headings should not contain slashes")
+                if len(levels) == 0:
+                    levels.append((c.level, c.source))
+                elif c.level > levels[-1][0]:
+                    self._add_grading_cell(new_cells, heading)
+                    levels.append((c.level, c.source))
+                else:
+                    self._add_grading_cell(new_cells, heading)
+                    while (len(levels) > 0) and (c.level <= levels[-1][0]):
+                        levels.pop()
+                    levels.append((c.level, c.source))
+                new_cells.append(c)
+
+            elif c.metadata.get('grade', False):
+                c.metadata['level'] = heading
+                new_cells.append(c)
+
         worksheet.cells = new_cells
 
     def _load_autograder(self, cells):
-        """Loads grading code from file, according to the c.Grader.autograder
-        traitlet, and then creates several new cells:
-
-        1. A heading cell called "Autograder". Will be created at the
-           level specified by c.Grader.heading_level
-        2. A code cell to load the autograder extension.
-        3. A code cell containing the loaded grading code, prepended
-           with the `%%autograde` magic.
-
-        These cells are appended to the given list of cells.
-
-        """
-
-        # don't do anything if there is no grading code
         if not self.autograder_file:
             return
 
-        # load the code and prepend the cell magic
-        with open(self.autograder_file, 'r') as fh:
-            autograder_code = "%%autograde\n\n"
-            autograder_code += fh.read().strip()
+        with open(self.autograder_file, "r") as fh:
+            code = compile(fh.read(), "autograder", "exec")
 
-        # create the new cells
-        cells.append(new_heading_cell(
-            source="Autograder", level=self.heading_level))
-        cells.append(new_code_cell(input="%load_ext autograder"))
-        if self.scores_file:
+        ns = {}
+        exec "from autograder import score" in ns
+        exec code in ns
+        self.problems = ns["score"].max_grades.keys()
+
+        cells.append(new_code_cell(input=(
+            "%load_ext autograder\n"
+            "%set_autograder {}"
+        ).format(self.autograder_file)))
+
+    def _add_grading_cell(self, cells, heading):
+        if self.autograder_file and heading in self.problems:
             cells.append(new_code_cell(
-                input=autograder_code, metadata={"scores": True}))
-        else:
-            cells.append(new_code_cell(input=autograder_code))
+                input="%grade {}".format(heading)))
