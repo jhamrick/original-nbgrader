@@ -151,7 +151,7 @@ class Grader(ExecutePreprocessor):
 
         cells.append(new_code_cell(input=(
             "%load_ext autograder\n"
-            "%set_autograder {}"
+            "%load_autograder {}"
         ).format(self.autograder_file)))
 
     def _add_grading_cell(self, cells, heading):

@@ -64,11 +64,8 @@ class NoseGraderMagic(Magics):
         if cell is not None:
             ip.run_cell(cell)
         else:
-            with open(self.autograder_path, "r") as fh:
-                code = fh.read()
-
             ip.run_cell("from autograder import score; score.reset()")
-            ip.run_cell(code)
+            ip.run_cell(self.autograder_code)
 
         # create the test module for nose
         test_module = types.ModuleType('test_module')
@@ -104,8 +101,9 @@ class NoseGraderMagic(Magics):
             return test_module.__dict__['score'].as_dataframe()
 
     @line_magic
-    def set_autograder(self, line):
-        self.autograder_path = line
+    def load_autograder(self, line):
+        with open(line, 'r') as fh:
+            self.autograder_code = fh.read()
 
 
 def load_ipython_extension(ipython):
