@@ -67,7 +67,7 @@ class NoseGraderMagic(Magics):
             with open(self.autograder_path, "r") as fh:
                 code = fh.read()
 
-            ip.run_cell("from autograder import score")
+            ip.run_cell("from autograder import score; score.reset()")
             ip.run_cell(code)
 
         # create the test module for nose
