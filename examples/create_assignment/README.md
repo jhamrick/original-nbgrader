@@ -14,8 +14,7 @@ version or a solution version.
 ## Master Version
 
 In this example, the master version is in the file
-[Assignment Template.ipynb](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/examples/create_assignment/Assignment
-Template.ipynb). By default, everything in the master version will go
+[Assignment Template.ipynb](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/examples/create_assignment/Assignment Template.ipynb). By default, everything in the master version will go
 in both the release version and in the solutions version. Exceptions
 can be made using the following syntax:
 
