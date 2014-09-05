@@ -29,6 +29,12 @@ class ReleasePreprocessor(ExecutePreprocessor):
         self.env = Environment(trim_blocks=True, lstrip_blocks=True)
 
     def preprocess(self, nb, resources):
+        cells = []
+        for cell in nb.worksheets[0].cells:
+            if not cell.metadata.get('exclude', False):
+                cells.append(cell)
+        nb.worksheets[0].cells = cells
+
         if self.solution:
             nb, resources = super(ReleasePreprocessor, self).preprocess(
                 nb, resources)

@@ -1,161 +1,156 @@
-import json
+from __future__ import print_function
 
-from IPython.nbconvert.preprocessors import ExecutePreprocessor
-from IPython.utils.traitlets import Unicode, Int, Bool
-from IPython.nbformat.current import new_code_cell, new_heading_cell, \
-    new_text_cell
-from IPython.kernel.zmq import serialize
+import nose
+import types
+import os
+import pandas as pd
+import jinja2
+import sys
 
-try:
-    from queue import Empty  # Py 3
-except ImportError:
-    from Queue import Empty  # Py 2
+from collections import defaultdict
+from nose.tools import make_decorator
+from nose.plugins.attrib import attr, AttributeSelector
+from IPython.core.magic import Magics, magics_class
+from IPython.core.magic import line_magic, line_cell_magic
+from IPython.core.inputtransformer import InputTransformer
 
 
-class Grader(ExecutePreprocessor):
+class score(object):
+    """Decorator for marking the problem an autograder test corresponds
+    to, as well as the number of points that should be earned if the
+    test passes.
 
-    # configurable traitlets
-    assignment = Unicode(
-        "", config=True, info_text="Assignment name")
-    autograder_file = Unicode(
-        "", config=True, info_text="Path to file containing autograding code")
-    include_code = Bool(
-        True, config=True,
-        info_test="Whether to include autograder code in the graded notebook")
-    scores_file = Unicode(
-        "", config=True, info_text="Path to save scores")
-    heading_level = Int(
-        1, config=True, info_text="Level for heading cells")
+    The `grades` and `max_grades` dictionaries should be reset (using
+    `score.reset()`) before the autograding code is actually run. This
+    will happen automatically if the `%%grade` magic is used.
 
-    def preprocess(self, nb, resources):
-        if len(nb.worksheets) != 1:
-            raise ValueError("cannot handle more than one worksheet")
+    """
 
-        # extract only cells that have grade=True metadata
-        self._filter_grading_cells(nb.worksheets[0])
+    grades = defaultdict(float)
+    max_grades = defaultdict(float)
 
-        # set notebook name, and clear other metadata
-        nb.metadata = {"name": self.assignment}
+    def __init__(self, problem, points):
+        self.problem = problem
+        self.points = points
+        self.max_grades[self.problem] += self.points
 
-        # execute all the cells
-        nb, resources = super(Grader, self).preprocess(nb, resources)
+    def __call__(self, f):
+        def wrapped_f(*args):
+            f(*args)
+            self.grades[self.problem] += self.points
+        return attr(problem=self.problem)(make_decorator(f)(wrapped_f))
 
-        # save the scores to file
-        if 'scores' in resources:
-            scores = resources['scores']
-            with open(self.scores_file, 'w') as fh:
-                json.dump(scores, fh)
-            self.log.info("Saving scores to '{}'".format(self.scores_file))
+    @classmethod
+    def reset(cls):
+        cls.grades = defaultdict(float)
+        cls.max_grades = defaultdict(float)
 
-        return nb, resources
+    @classmethod
+    def as_dataframe(cls):
+        df = pd.DataFrame({
+            'score': cls.grades,
+            'max_score': cls.max_grades
+        }, columns=['score', 'max_score'])
+        df = df.dropna()
+        return df
 
-    def preprocess_cell(self, cell, resources, cell_index):
-        cell, resources = super(Grader, self).preprocess_cell(
-            cell, resources, cell_index)
+    @classmethod
+    def as_dict(cls):
+        df = cls.as_dataframe()
+        return df.T.to_dict()
 
-        # if the cell is marked as returning scores, then extract the
-        # scores from it, and remove the metadata flag
-        if self.scores_file and cell.metadata.get('scores', False):
-            scores = self._get_scores()
-            if 'scores' not in resources:
-                resources['scores'] = []
-            resources['scores'].extend(scores)
-            del cell.metadata['scores']
 
-        return cell, resources
+@magics_class
+class NoseGraderMagic(Magics):
 
-    def _get_scores(self):
-        """Publish score data from the notebook as a dictionary."""
+    @line_cell_magic
+    def grade(self, line, cell=None):
+        ip = get_ipython()
+        if cell is not None:
+            ip.run_cell("__score__.reset(); score = __score__")
+            ip.run_cell(cell)
+        else:
+            ip.run_cell("__score__.reset(); score = __score__")
+            ip.run_cell(self.autograder_code)
 
-        # send the "publish data" message, which will send the
-        # (serialized) raw data
-        self.shell.execute(
-            "from IPython.kernel.zmq.datapub import publish_data\n"
-            "publish_data(__score__.as_dict())")
-        self.shell.get_msg(timeout=20)
+        # create the test module for nose
+        test_module = types.ModuleType('test_module')
+        test_module.__dict__.update(ip.user_ns)
 
-        # read the message with the data, and unserialize it
-        score_data = []
-        while True:
-            try:
-                msg = self.iopub.get_msg(timeout=0.2)
-            except Empty:
-                break
+        # change the test name template to use "grade" instead of
+        # "test" (which is the default)
+        env = os.environ
+        env['NOSE_TESTMATCH'] = r'(?:^|[\b_\.%s-])[Gg]rade' % os.sep
 
-            if msg['msg_type'] == 'data_message':
-                data, remainder = serialize.unserialize_object(msg['buffers'])
-                score_data.append(data)
+        # load user config files
+        cfg_files = nose.config.all_config_files()
 
-        return score_data
+        # create a plugin manager
+        plug = AttributeSelector()
+        plug.attribs = [[("problem", line)]]
+        plug.enabled = True
+        mgr = nose.plugins.manager.DefaultPluginManager(
+            plugins=[plug])
 
-    def _filter_grading_cells(self, worksheet):
-        """Filters out cells from the worksheet that do not have "grade"
-        metadata set to True.
+        # create the nose configuration object, and load the tests
+        config = nose.config.Config(env=env, files=cfg_files, plugins=mgr)
+        loader = nose.loader.TestLoader(config=config)
+        tests = loader.loadTestsFromModule(test_module)
 
-        """
-        cells = worksheet.cells
-        new_cells = []
-        levels = []
+        # run the tests
+        nose.core.TestProgram(
+            argv=["autograder", "--verbose"],
+            suite=tests, exit=False, config=config)
 
-        self._load_autograder(new_cells)
+        # create a pandas dataframe of the scores, and return it
+        if '__score__' in test_module.__dict__:
+            return test_module.__dict__['__score__'].as_dataframe()
 
-        for c in cells:
-            heading = "/".join([x[1] for x in levels])
-            if c.cell_type == 'heading':
-                if "/" in c.source:
-                    raise ValueError("headings should not contain slashes")
-                if len(levels) == 0:
-                    levels.append((c.level, c.source))
-                elif c.level > levels[-1][0]:
-                    self._add_grading_cell(new_cells, heading)
-                    levels.append((c.level, c.source))
-                else:
-                    self._add_grading_cell(new_cells, heading)
-                    while (len(levels) > 0) and (c.level <= levels[-1][0]):
-                        levels.pop()
-                    levels.append((c.level, c.source))
-                new_cells.append(c)
-
-            elif c.metadata.get('grade', False):
-                c.metadata['level'] = heading
-                new_cells.append(c)
-
-        self._add_autograder_code(new_cells)
-
-        worksheet.cells = new_cells
-
-    def _add_autograder_code(self, cells):
-        if not self.autograder_code:
-            return
-
-        code = "```python\n{}\n```".format(self.autograder_code)
-        cells.append(new_heading_cell(
-            source="Autograder", level=self.heading_level))
-        cells.append(new_text_cell(
-            'markdown',
-            source="The following code was used to grade this assignment:"))
-        cells.append(new_text_cell('markdown', source=code))
-
-    def _load_autograder(self, cells):
-        if not self.autograder_file:
-            return
-
-        with open(self.autograder_file, "r") as fh:
+    @line_magic
+    def load_autograder(self, line):
+        with open(line, 'r') as fh:
             self.autograder_code = fh.read()
 
-        ns = {}
-        code = compile(self.autograder_code, "autograder", "exec")
-        exec "from autograder import score" in ns
-        exec code in ns
-        self.problems = ns["score"].max_grades.keys()
 
-        cells.append(new_code_cell(input=(
-            "%load_ext autograder\n"
-            "%load_autograder {}"
-        ).format(self.autograder_file)))
+class SolutionInputTransformer(InputTransformer):
+    """IPython input transformer that renders jinja templates in cells,
+    allowing them to be run while the instructor is developing the
+    assignment.
 
-    def _add_grading_cell(self, cells, heading):
-        if self.autograder_file and heading in self.problems:
-            cells.append(new_code_cell(
-                input="%grade {}".format(heading),
-                metadata={"scores": True}))
+    Original version written by minrk:
+    http://nbviewer.ipython.org/gist/minrk/c2b26ee47b7caaaa0c74
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(SolutionInputTransformer, self).__init__(*args, **kwargs)
+
+        self.env = jinja2.Environment()
+        self._lines = []
+
+    def push(self, line):
+        self._lines.append(line)
+        return None
+
+    def reset(self):
+        text = u'\n'.join(self._lines)
+        self._lines = []
+        template = self.env.from_string(text)
+        try:
+            return template.render(solution=True)
+        except Exception as e:
+            print("Failed to render jinja template: %s" % e, file=sys.stderr)
+            return text
+
+
+def run_solutions(self, line):
+    ip = get_ipython()
+    ip.input_transformer_manager.physical_line_transforms.insert(
+        0, SolutionInputTransformer()
+    )
+
+
+def load_ipython_extension(ipython):
+    ipython.register_magics(NoseGraderMagic)
+    ipython.define_magic('run_solutions', run_solutions)
+    ipython.run_cell("from autograder import score as __score__")

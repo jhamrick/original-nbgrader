@@ -12,14 +12,14 @@ help:
 	@echo "examples  : generate and grade the example notebook in the examples"
 
 install: uninstall
-	cp autograder.py $(IPYDIR)/
+	cp nbgrader_magic.py $(IPYDIR)/nbgrader.py
 
 develop: uninstall
-	ln autograder.py $(IPYDIR)/autograder.py
+	ln nbgrader_magic.py $(IPYDIR)/nbgrader.py
 
 uninstall:
-	rm -f $(IPYDIR)/autograder.py
-	rm -f $(IPYDIR)/autograder.pyc
+	rm -f $(IPYDIR)/nbgrader.py
+	rm -f $(IPYDIR)/nbgrader.pyc
 
 examples:
 	@PYTHONPATH="$(PWD):$(PYTHONPATH)" make -C examples
