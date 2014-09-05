@@ -1,6 +1,7 @@
 # nbgrader
 
-IPython nbconvert preprocessor for grading notebooks.
+IPython nbconvert preprocessor for generating and grading assignments
+in IPython notebooks.
 
 Author: Jessica B. Hamrick
 
@@ -32,10 +33,10 @@ and a nbconvert preprocessor:
 ## Example
 
 This is an
-[example assignment](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/example/test1.ipynb). Certain
+[example assignment](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/examples/grade_assignment/Submitted Assignment.ipynb). Certain
 cells have metadata marking them for grading (`"grade": true`). When
 run through `nbconvert`, a
-[graded version of the notebook](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/example/test1_graded.ipynb)
+[graded version of the notebook](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/examples/grade_assignment/Graded Assignment.ipynb)
 is produced and includes only the cells that were originally marked
 for grading, in addition to a few cells at the bottom that load the
 autograder magic and report successes/failures.
@@ -48,7 +49,7 @@ additionally need to include `nbgrader.py` somewhere on your
 `PYTHONPATH`, i.e.:
 
 ```
-export PYTHONPATH="/path/to/nbgrader.py:$PYTHONPATH"
+export PYTHONPATH="/path/to/nbgrader:$PYTHONPATH"
 ```
 
 ## Magic usage
@@ -71,8 +72,8 @@ Additionally, if you are using the magic in coordination with the
 nbconvert preprocessor, you should use problem names that correspond
 to the headings that they are nested beneath.
 
-See [example tests](example/test1_autograder.py) for grading the
-[example assignment](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/example/test1.ipynb).
+See [example tests](examples/grade_assignment/example_autograder.py) for grading the
+[example assignment](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/examples/grade_assignment/Submitted Assignment.ipynb).
 
 ### Using the magic
 
@@ -110,10 +111,10 @@ The preprocessor does several things:
 To run the preprocessor, create a file called
 `ipython_nbconvert_config.py` in the same directory as your
 notebook. See
-[example/ipython_nbconvert_config.py](example/ipython_nbconvert_config.py)
+[examples/ipython_nbconvert_config.py](example/ipython_nbconvert_config.py)
 for an example. Then, run `ipython nbconvert` at the command line.
 
-### Creating an assignment
+### Creating a gradeable assignment
 
 Technically, any IPython notebook is a valid assignment. However, to
 actually grade that assignment, cells of the notebook must be marked
