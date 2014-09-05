@@ -2,12 +2,12 @@
 
 IPython nbconvert preprocessor for grading notebooks.
 
-> Currently, this only works with a development version of IPython,
-> including pull requests
-> [#5639](https://github.com/ipython/ipython/pull/5639) and
-> [#5720](https://github.com/ipython/ipython/pull/5720), as the grader
-> functionality relies on a nbconvert preprocessor for executing
-> cells, and being able to then export to the notebook format.
+Author: Jessica B. Hamrick
+
+> Currently (as of 09/04/2014), this only works with a development
+> version of IPython, as the grader functionality relies on a
+> nbconvert preprocessor for executing cells, and being able to then
+> export to the notebook format.
 
 ## Overview
 
@@ -22,9 +22,9 @@ assignments in the IPython notebook, and then grading them.
 There are two main features of `nbgrader`: an IPython extension magic,
 and a nbconvert preprocessor:
 
-* `autograder` extension magic: this provides a cell magic,
-  `%%autograde` which will execute grading code in the cell using
-  `nose`.
+* `autograder` extension magic: this provides a line magic, `%grade
+  <problem>` which will execute all tests that have been marked as
+  tests for the problem with name `<problem>`.
 * `nbgrader.Grader` preprocessor: this is a nbconvert preprocessor
   which extracts cells marked for grading, runs them, and then grades
   them using the autograde magic.
@@ -53,32 +53,43 @@ export PYTHONPATH="/path/to/nbgrader.py:$PYTHONPATH"
 
 ## Magic usage
 
-To use the autograde magic, you need to first load the extension with
-`%load_ext autograder`. Then, create a cell with `%%autograde` at the
-top, and [nose](https://nose.readthedocs.org/en/latest/) tests within
-the cell. There are a few differences from standard `nose`:
+To use the autograde magic, you need to do several things: write
+tests, and then run the magic.
 
-1. Tests should be prefixed with "grade" or "Grade" rather than "test"
-   or "Test".
-2. You can decorate tests with `score`, which takes two arguments: the
-   problem name, and the number of points it is worth. If the test
-   passes, then those points are earned, otherwise, they are not. So,
-   as the tests are run, points earned for each problem will be
-   tracked and then reported after the grading is completed.
+### Writing grading scripts
 
-Here is an example:
+First, create a python file with
+[nose](https://nose.readthedocs.org/en/latest/) tests for the problems
+you want to grade. There are two important ways the tests must be written:
 
-```
-%%autograde
+1. The name of each test must begin with "grade" or "Grade".
+2. Each test must be decorated with a `@score` decorator, which takes
+   as arguments the name of the problem that the test corresponds to,
+   and the number of points that it is worth.
 
-@score(problem="problem1", score=1.0)
-def grade_problem1():
-    ... grading code here ...
+Additionally, if you are using the magic in coordination with the
+nbconvert preprocessor, you should use problem names that correspond
+to the headings that they are nested beneath.
 
-@score(problem="problem1", score=0.5)
-def grade_problem1_differently():
-    ... more grading code here ...
-```
+See [example tests](example/test1_autograder.py) for grading the
+[example assignment](http://nbviewer.ipython.org/github/jhamrick/nbgrader/blob/master/example/test1.ipynb).
+
+### Using the magic
+
+Once the tests are written, there are three steps you must take. If
+you are using the nbconvert preprocessor, these will be done for you
+automatically, otherwise you must do them manually:
+
+1. Load the extension with `%load_ext autograder`, and load the file
+   with your nose tests with `%load_autograder my_autograder.py`,
+   where `my_autograder.py` is the filename of the file with the tests
+   in it.
+2. Run any cells containing code to be tested.
+3. Create a new cell, and use the line magic as `%grade <problem>`,
+   where `<problem>` is the name of the problem you want to
+   grade. Messages will be displayed indicating which tests are being
+   run, and then a table will be shown that indicates the number of
+   points earned.
 
 ## Preprocessor usage
 
