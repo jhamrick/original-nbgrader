@@ -1,4 +1,4 @@
-.PHONY: help install develop uninstall example
+.PHONY: help install develop uninstall examples
 IPYDIR = $(HOME)/.ipython/extensions
 PWD = $(shell pwd)
 
@@ -9,7 +9,7 @@ help:
 	@echo "install   : copy extension files to standard locations"
 	@echo "develop   : hardlink extension files to standard locations"
 	@echo "uninstall : remove copied extension files"
-	@echo "example   : grade the example notebook in example"
+	@echo "examples  : generate and grade the example notebook in the examples"
 
 install: uninstall
 	cp autograder.py $(IPYDIR)/
@@ -21,5 +21,5 @@ uninstall:
 	rm -f $(IPYDIR)/autograder.py
 	rm -f $(IPYDIR)/autograder.pyc
 
-example:
-	@PYTHONPATH="$(PWD):$(PYTHONPATH)" make -C example
+examples:
+	@PYTHONPATH="$(PWD):$(PYTHONPATH)" make -C examples
