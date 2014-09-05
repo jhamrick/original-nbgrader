@@ -12,4 +12,4 @@ Assignment\ Solution.html: Assignment\ Template.ipynb solutions_config.py
 
 clean:
 	rm -rf Assignment.ipynb
-	rm -rf Assignment\ Solution.ipynb
+	rm -rf Assignment\ Solution.html
