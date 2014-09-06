@@ -1,20 +1,10 @@
+import os
+
 from jinja2 import Environment
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
-from IPython.nbformat.current import new_code_cell, new_text_cell, \
-    new_heading_cell
-
-instructions = r"""Before you turn this problem in, make sure everything runs
-as expected. First, **restart the kernel** (in the menubar, select
-Kernel$\rightarrow$Restart) and then **run all cells** (in the
-menubar, select Cell$\rightarrow$Run All).
-
-Make sure you fill in any place that says `YOUR CODE HERE` or **YOUR
-ANSWER HERE**, as well as your name and collaborators below:
-"""
-
-name_cell = """NAME = ""
-COLLABORATORS = "" """
+from IPython.nbformat.current import new_text_cell, new_heading_cell
+from IPython.nbformat.current import read as read_nb
 
 
 class ReleasePreprocessor(ExecutePreprocessor):
@@ -23,10 +13,35 @@ class ReleasePreprocessor(ExecutePreprocessor):
         False, config=True,
         info_test="Whether to generate the release version, or the solutions")
     title = Unicode("", config=True, info_test="Title of the assignment")
+    resource_path = Unicode("", config=True, info_test="Path to resources")
+    release_header = Unicode(
+        "", config=True,
+        info_test="Path to header notebook for release version")
+    release_footer = Unicode(
+        "", config=True,
+        info_test="Path to footer notebook for release version")
+    solution_header = Unicode(
+        "", config=True,
+        info_test="Path to header notebook for solution version")
+    solution_footer = Unicode(
+        "", config=True,
+        info_test="Path to footer notebook for solution version")
 
     def __init__(self, *args, **kwargs):
         super(ReleasePreprocessor, self).__init__(*args, **kwargs)
         self.env = Environment(trim_blocks=True, lstrip_blocks=True)
+
+        if self.solution:
+            self.header = self.solution_header
+            self.footer = self.solution_footer
+        else:
+            self.header = self.release_header
+            self.footer = self.release_footer
+
+        if self.header != '':
+            self.header = os.path.join(self.resource_path, self.header)
+        if self.footer != '':
+            self.footer = os.path.join(self.resource_path, self.footer)
 
     def preprocess(self, nb, resources):
         cells = []
@@ -59,18 +74,22 @@ class ReleasePreprocessor(ExecutePreprocessor):
             cells.insert(index, new_text_cell(
                 'markdown', source=toc))
 
-        if not self.solution:
-            index += 1
-            cells.insert(index, new_text_cell(
-                'markdown', source=instructions))
-
-            index += 1
-            cells.insert(index, new_code_cell(
-                input=name_cell))
+        if os.path.exists(self.header):
+            with open(self.header, 'r') as fh:
+                header_nb = read_nb(fh, 'ipynb')
+            for cell in header_nb.worksheets[0].cells:
+                index += 1
+                cells.insert(index, cell)
 
         index += 1
         cells.insert(index, new_text_cell(
             'markdown', source='---'))
+
+        if os.path.exists(self.footer):
+            with open(self.footer, 'r') as fh:
+                footer_nb = read_nb(fh, 'ipynb')
+            for cell in footer_nb.worksheets[0].cells:
+                cells.append(cell)
 
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
