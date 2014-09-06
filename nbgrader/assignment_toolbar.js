@@ -18,14 +18,14 @@ define([
             ],
 
             function (cell, value) {
-                if (cell.metadata.assignment == undefined) {
+                if (cell.metadata.assignment === undefined) {
                     cell.metadata.assignment = {};
                 }
                 cell.metadata.assignment.slide_type = value;
             },
 
             function (cell) {
-                if (cell.metadata.assignment == undefined) {
+                if (cell.metadata.assignment === undefined) {
                     return "-";
                 } else {
                     return cell.metadata.assignment.slide_type;
@@ -36,7 +36,7 @@ define([
         points = CellToolbar.utils.input_ui_generator(
             "Points: ",
             function (cell, value) {
-                if (cell.metadata.assignment == undefined) {
+                if (cell.metadata.assignment === undefined) {
                     cell.metadata.assignment = {};
                 }
                 cell.metadata.assignment.points = value;
@@ -44,7 +44,7 @@ define([
             },
 
             function (cell) {
-                if (cell.metadata.assignment == undefined) {
+                if (cell.metadata.assignment === undefined) {
                     return undefined;
                 } else {
                     return cell.metadata.assignment.points;
@@ -55,10 +55,12 @@ define([
         ),
 
         load_ipython_extension = function (notebook) {
-            CellToolbar.register_callback('assignment.select', select_type);
-            CellToolbar.register_callback('assignment.points', points);
-            var preset = ['assignment.select', 'assignment.points'];
-            CellToolbar.register_preset('Assignment', preset, notebook);
+            CellToolbar.register_callback('create_assignment.select', select_type);
+            CellToolbar.register_callback('create_assignment.points', points);
+
+            var create_preset = ['create_assignment.select', 'create_assignment.points'];
+            CellToolbar.register_preset('Create Assignment', create_preset, notebook);
+
             console.log('Assignment extension for metadata editing loaded.');
         };
 
