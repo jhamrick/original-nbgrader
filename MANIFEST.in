@@ -1,4 +1,3 @@
 include README.md
 include COPYING.txt
-include nbgrader_extension.py
 recursive-include nbgrader *.py

@@ -103,9 +103,3 @@ def run_solutions(line):
     ip.input_transformer_manager.physical_line_transforms.insert(
         0, SolutionInputTransformer()
     )
-
-
-def load_ipython_extension(ipython):
-    ipython.register_magics(NoseGraderMagic)
-    mm = ipython.magics_manager
-    mm.register_function(run_solutions, 'line')

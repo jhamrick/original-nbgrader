@@ -150,7 +150,7 @@ class Grader(ExecutePreprocessor):
         self.problems = ns["score"].max_grades.keys()
 
         cells.append(new_code_cell(input=(
-            "%load_ext grader\n"
+            "%load_ext nbgrader\n"
             "%load_autograder {}"
         ).format(self.autograder_file)))
 
