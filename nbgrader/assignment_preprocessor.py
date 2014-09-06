@@ -27,13 +27,6 @@ class ReleasePreprocessor(ExecutePreprocessor):
             self.footer = os.path.join(self.resource_path, self.footer)
 
     def preprocess(self, nb, resources):
-        if self.solution:
-            nb, resources = super(ReleasePreprocessor, self).preprocess(
-                nb, resources)
-        else:
-            nb, resources = super(ExecutePreprocessor, self).preprocess(
-                nb, resources)
-
         cells = nb.worksheets[0].cells
         toc = self._get_toc(cells)
         index = self._find_imports_cell(cells)
@@ -84,6 +77,13 @@ class ReleasePreprocessor(ExecutePreprocessor):
                 continue
             cells.append(cell)
         nb.worksheets[0].cells = cells
+
+        if self.solution:
+            nb, resources = super(ReleasePreprocessor, self).preprocess(
+                nb, resources)
+        else:
+            nb, resources = super(ExecutePreprocessor, self).preprocess(
+                nb, resources)
 
         return nb, resources
 
