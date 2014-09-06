@@ -6,7 +6,7 @@ c.NbConvertApp.notebooks = ['Assignment Template.ipynb']
 c.NbConvertApp.output_base = 'Assignment Solution'
 c.NbConvertApp.export_format = 'html'
 
-c.Exporter.preprocessors = ['assignment_preprocessor.ReleasePreprocessor']
+c.Exporter.preprocessors = ['nbgrader.ReleasePreprocessor']
 c.Exporter.template_file = "solutions"
 c.Exporter.template_path = [os.path.dirname(os.path.realpath(__file__))]
 

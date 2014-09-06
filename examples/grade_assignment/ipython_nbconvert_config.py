@@ -4,7 +4,7 @@ c.NbConvertApp.notebooks = ['Submitted Assignment.ipynb']
 c.NbConvertApp.output_base = 'Graded Assignment'
 c.NbConvertApp.export_format = 'notebook'
 
-c.Exporter.preprocessors = ['grading_preprocessor.Grader']
+c.Exporter.preprocessors = ['nbgrader.Grader']
 
 c.InteractiveShellApp.exec_lines = []
 

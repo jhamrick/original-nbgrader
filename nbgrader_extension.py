@@ -3,61 +3,14 @@ from __future__ import print_function
 import nose
 import types
 import os
-import pandas as pd
 import jinja2
 import sys
 
-from collections import defaultdict
-from nose.tools import make_decorator
-from nose.plugins.attrib import attr, AttributeSelector
+from nose.plugins.attrib import AttributeSelector
+
 from IPython.core.magic import Magics, magics_class
 from IPython.core.magic import line_magic, line_cell_magic
 from IPython.core.inputtransformer import InputTransformer
-
-
-class score(object):
-    """Decorator for marking the problem an autograder test corresponds
-    to, as well as the number of points that should be earned if the
-    test passes.
-
-    The `grades` and `max_grades` dictionaries should be reset (using
-    `score.reset()`) before the autograding code is actually run. This
-    will happen automatically if the `%%grade` magic is used.
-
-    """
-
-    grades = defaultdict(float)
-    max_grades = defaultdict(float)
-
-    def __init__(self, problem, points):
-        self.problem = problem
-        self.points = points
-        self.max_grades[self.problem] += self.points
-
-    def __call__(self, f):
-        def wrapped_f(*args):
-            f(*args)
-            self.grades[self.problem] += self.points
-        return attr(problem=self.problem)(make_decorator(f)(wrapped_f))
-
-    @classmethod
-    def reset(cls):
-        cls.grades = defaultdict(float)
-        cls.max_grades = defaultdict(float)
-
-    @classmethod
-    def as_dataframe(cls):
-        df = pd.DataFrame({
-            'score': cls.grades,
-            'max_score': cls.max_grades
-        }, columns=['score', 'max_score'])
-        df = df.dropna()
-        return df
-
-    @classmethod
-    def as_dict(cls):
-        df = cls.as_dataframe()
-        return df.T.to_dict()
 
 
 @magics_class
@@ -108,6 +61,8 @@ class NoseGraderMagic(Magics):
 
     @line_magic
     def load_autograder(self, line):
+        ip = get_ipython()
+        ip.run_cell("from nbgrader import Score as __score__")
         with open(line, 'r') as fh:
             self.autograder_code = fh.read()
 
@@ -143,7 +98,7 @@ class SolutionInputTransformer(InputTransformer):
             return text
 
 
-def run_solutions(self, line):
+def run_solutions(line):
     ip = get_ipython()
     ip.input_transformer_manager.physical_line_transforms.insert(
         0, SolutionInputTransformer()
@@ -152,5 +107,5 @@ def run_solutions(self, line):
 
 def load_ipython_extension(ipython):
     ipython.register_magics(NoseGraderMagic)
-    ipython.define_magic('run_solutions', run_solutions)
-    ipython.run_cell("from autograder import score as __score__")
+    mm = ipython.magics_manager
+    mm.register_function(run_solutions, 'line')

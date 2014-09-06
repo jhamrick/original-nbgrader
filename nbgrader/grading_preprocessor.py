@@ -145,7 +145,7 @@ class Grader(ExecutePreprocessor):
 
         ns = {}
         code = compile(self.autograder_code, "autograder", "exec")
-        exec "from nbgrader_magic import score" in ns
+        exec "from nbgrader import Score as score" in ns
         exec code in ns
         self.problems = ns["score"].max_grades.keys()
 

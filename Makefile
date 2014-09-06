@@ -12,10 +12,10 @@ help:
 	@echo "examples  : generate and grade the example notebook in the examples"
 
 install: uninstall
-	cp nbgrader_magic.py $(IPYDIR)/nbgrader.py
+	cp nbgrader_extension.py $(IPYDIR)/nbgrader.py
 
 develop: uninstall
-	ln nbgrader_magic.py $(IPYDIR)/nbgrader.py
+	ln nbgrader_extension.py $(IPYDIR)/nbgrader.py
 
 uninstall:
 	rm -f $(IPYDIR)/nbgrader.py
