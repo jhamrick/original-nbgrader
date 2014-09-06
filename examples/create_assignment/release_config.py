@@ -11,4 +11,4 @@ c.Exporter.preprocessors = ['nbgrader.ReleasePreprocessor']
 c.ReleasePreprocessor.solution = False
 c.ReleasePreprocessor.title = 'Example Assignment'
 c.ReleasePreprocessor.resource_path = os.path.dirname(os.path.realpath(__file__))
-c.ReleasePreprocessor.release_header = 'header.ipynb'
+c.ReleasePreprocessor.header = 'header.ipynb'
