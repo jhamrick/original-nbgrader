@@ -14,29 +14,12 @@ class ReleasePreprocessor(ExecutePreprocessor):
         info_test="Whether to generate the release version, or the solutions")
     title = Unicode("", config=True, info_test="Title of the assignment")
     resource_path = Unicode("", config=True, info_test="Path to resources")
-    release_header = Unicode(
-        "", config=True,
-        info_test="Path to header notebook for release version")
-    release_footer = Unicode(
-        "", config=True,
-        info_test="Path to footer notebook for release version")
-    solution_header = Unicode(
-        "", config=True,
-        info_test="Path to header notebook for solution version")
-    solution_footer = Unicode(
-        "", config=True,
-        info_test="Path to footer notebook for solution version")
+    header = Unicode("", config=True, info_test="Path to header notebook")
+    footer = Unicode("", config=True, info_test="Path to footer notebook")
 
     def __init__(self, *args, **kwargs):
         super(ReleasePreprocessor, self).__init__(*args, **kwargs)
         self.env = Environment(trim_blocks=True, lstrip_blocks=True)
-
-        if self.solution:
-            self.header = self.solution_header
-            self.footer = self.solution_footer
-        else:
-            self.header = self.release_header
-            self.footer = self.release_footer
 
         if self.header != '':
             self.header = os.path.join(self.resource_path, self.header)
@@ -44,12 +27,6 @@ class ReleasePreprocessor(ExecutePreprocessor):
             self.footer = os.path.join(self.resource_path, self.footer)
 
     def preprocess(self, nb, resources):
-        cells = []
-        for cell in nb.worksheets[0].cells:
-            if not cell.metadata.get('exclude', False):
-                cells.append(cell)
-        nb.worksheets[0].cells = cells
-
         if self.solution:
             nb, resources = super(ReleasePreprocessor, self).preprocess(
                 nb, resources)
@@ -94,6 +71,20 @@ class ReleasePreprocessor(ExecutePreprocessor):
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
 
+        # filter out various cells
+        cells = []
+        for cell in nb.worksheets[0].cells:
+            meta = cell.metadata.get('assignment', {})
+            cell_type = meta.get('cell_type', '-')
+            if cell_type == 'skip':
+                continue
+            elif cell_type == 'release' and self.solution:
+                continue
+            elif cell_type == 'solution' and not self.solution:
+                continue
+            cells.append(cell)
+        nb.worksheets[0].cells = cells
+
         return nb, resources
 
     def preprocess_cell(self, cell, resources, cell_index):
@@ -110,8 +101,8 @@ class ReleasePreprocessor(ExecutePreprocessor):
 
         if self.solution:
             try:
-                cell, resources = super(ReleasePreprocessor, self).preprocess_cell(
-                    cell, resources, cell_index)
+                cell, resources = super(ReleasePreprocessor, self)\
+                    .preprocess_cell(cell, resources, cell_index)
             except:
                 import ipdb; ipdb.set_trace()
 

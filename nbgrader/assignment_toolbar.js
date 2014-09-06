@@ -21,14 +21,14 @@ define([
                 if (cell.metadata.assignment === undefined) {
                     cell.metadata.assignment = {};
                 }
-                cell.metadata.assignment.slide_type = value;
+                cell.metadata.assignment.cell_type = value;
             },
 
             function (cell) {
                 if (cell.metadata.assignment === undefined) {
                     return "-";
                 } else {
-                    return cell.metadata.assignment.slide_type;
+                    return cell.metadata.assignment.cell_type;
                 }
             }
         ),
@@ -66,3 +66,4 @@ define([
 
     return {'load_ipython_extension': load_ipython_extension};
 });
+

@@ -116,7 +116,7 @@ class Grader(ExecutePreprocessor):
                     levels.append((c.level, c.source))
                 new_cells.append(c)
 
-            elif c.metadata.get('grade', False):
+            else:
                 c.metadata['level'] = heading
                 new_cells.append(c)
 
