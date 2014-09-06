@@ -100,6 +100,5 @@ class SolutionInputTransformer(InputTransformer):
 
 def run_solutions(line):
     ip = get_ipython()
-    ip.input_transformer_manager.physical_line_transforms.insert(
-        0, SolutionInputTransformer()
-    )
+    transforms = ip.input_transformer_manager.physical_line_transforms
+    transforms.insert(0, SolutionInputTransformer())
