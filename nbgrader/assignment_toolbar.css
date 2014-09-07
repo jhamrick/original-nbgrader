@@ -1,0 +1,9 @@
+.assignment-points {
+    margin-left: 0.5em;
+}
+
+.assignment-points > span > label > input {
+    width: 3em;
+    height: 22px;
+    text-align: right;
+}
