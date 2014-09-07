@@ -8,6 +8,17 @@ define([
     "use strict";
 
     var CellToolbar = celltoolbar.CellToolbar,
+
+        handleCellType = function (cell, cell_type) {
+            if (cell_type === "grade") {
+                cell.celltoolbar.inner_element.find(".assignment-points").show();
+                cell.element.addClass("assignment-gradeable-cell");
+            } else {
+                cell.celltoolbar.inner_element.find(".assignment-points").hide();
+                cell.element.removeClass("assignment-gradeable-cell");
+            }
+        },
+
         select_type = CellToolbar.utils.select_ui_generator(
             [
                 ["-"             , "-"        ],
@@ -22,11 +33,7 @@ define([
                     cell.metadata.assignment = {};
                 }
                 cell.metadata.assignment.cell_type = value;
-                if (value === "grade") {
-                    cell.celltoolbar.inner_element.find(".assignment-points").show();
-                } else {
-                    cell.celltoolbar.inner_element.find(".assignment-points").hide();
-                }
+                handleCellType(cell, value);
             },
 
             function (cell) {
@@ -36,11 +43,7 @@ define([
                 } else {
                     cell_type = cell.metadata.assignment.cell_type;
                 }
-                if (cell_type === "grade") {
-                    cell.celltoolbar.inner_element.find(".assignment-points").show();
-                } else {
-                    cell.celltoolbar.inner_element.find(".assignment-points").hide();
-                }
+                handleCellType(cell, cell_type);
                 return cell_type;
             }
         ),
@@ -80,19 +83,15 @@ define([
             document.getElementsByTagName("head")[0].appendChild(link);
         },
 
-        load_ipython_extension = function (notebook) {
+        register = function (notebook) {
             load_css();
-
             CellToolbar.register_callback('create_assignment.select', select_type);
             CellToolbar.register_callback('create_assignment.points', points);
 
             var create_preset = ['create_assignment.points', 'create_assignment.select'];
             CellToolbar.register_preset('Create Assignment', create_preset, notebook);
-
             console.log('Assignment extension for metadata editing loaded.');
         };
 
-    return {'load_ipython_extension': load_ipython_extension};
+    return {'register': register};
 });
-
-
