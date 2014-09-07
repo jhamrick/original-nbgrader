@@ -1,4 +1,15 @@
 /*global define, require */
+/**
+ * To load this extension, add the following to your custom.js:
+ *
+ * $([IPython.events]).on('app_initialized.NotebookApp', function() {
+ *     require(["nbextensions/assignment"], function (assignment) {
+ *         console.log('Assignment extension loaded');
+ *         assignment.register(IPython.notebook);
+ *     });
+ * });
+ *
+**/
 
 define([
     'jquery',
