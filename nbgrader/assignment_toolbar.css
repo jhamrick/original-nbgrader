@@ -1,0 +1,14 @@
+div.assignment-points {
+    margin-left: 0.5em;
+    display: none;
+}
+
+input.assignment-points-input {
+    width: 3em;
+    height: 22px;
+    text-align: right;
+}
+
+div.assignment-gradeable-cell {
+    background-color: #FFA;
+}

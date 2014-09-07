@@ -12,3 +12,5 @@ c.Exporter.template_path = [os.path.dirname(os.path.realpath(__file__))]
 
 c.ReleasePreprocessor.solution = True
 c.ReleasePreprocessor.title = 'Example Assignment'
+c.ReleasePreprocessor.resource_path = os.path.dirname(os.path.realpath(__file__))
+c.ReleasePreprocessor.header = 'header.ipynb'
