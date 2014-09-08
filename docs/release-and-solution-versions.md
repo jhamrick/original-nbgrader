@@ -57,6 +57,23 @@ def hello(name):
     return "Hello, {}!".format(name)
 ```
 
+### Working with templates
+
+When developing your assignment, you probably want to be working with
+the solutions, so you know that they are correct. Unfortunately, the
+templates make that difficult because they are not valid Python
+syntax. To resolve this, you can use the `%run_solutions` magic, which
+will treat template cells as if `solution == True`, allowing them to
+be run. To use the magic, create and run a cell with the following:
+
+```python
+%load_ext nbgrader
+%run_solutions
+```
+
+(You probably also want to mark that cell as "Skip", so that it is not
+included in the release or solution version of the assignment).
+
 ## nbconvert configuration
 
 To convert the master version into either a release version or a
@@ -124,3 +141,5 @@ them is `{{ variable_name }}`.
 
 * `toc` -- a table of contents for the assignment, based on heading
   cells.
+* `points` -- the number of points that a particular problem or
+  subproblem is worth. This should ONLY be used within heading cells.
