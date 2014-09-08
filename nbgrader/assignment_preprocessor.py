@@ -1,9 +1,6 @@
-import os
-
 from jinja2 import Environment
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
-from IPython.nbformat.current import new_text_cell, new_heading_cell
 from IPython.nbformat.current import read as read_nb
 
 
@@ -12,8 +9,7 @@ class ReleasePreprocessor(ExecutePreprocessor):
     solution = Bool(
         False, config=True,
         info_test="Whether to generate the release version, or the solutions")
-    title = Unicode("", config=True, info_test="Title of the assignment")
-    resource_path = Unicode("", config=True, info_test="Path to resources")
+
     header = Unicode("", config=True, info_test="Path to header notebook")
     footer = Unicode("", config=True, info_test="Path to footer notebook")
 
@@ -21,45 +17,25 @@ class ReleasePreprocessor(ExecutePreprocessor):
         super(ReleasePreprocessor, self).__init__(*args, **kwargs)
         self.env = Environment(trim_blocks=True, lstrip_blocks=True)
 
-        if self.header != '':
-            self.header = os.path.join(self.resource_path, self.header)
-        if self.footer != '':
-            self.footer = os.path.join(self.resource_path, self.footer)
-
     def preprocess(self, nb, resources):
-        cells = nb.worksheets[0].cells
-        toc = self._get_toc(cells)
-        index = self._find_imports_cell(cells)
+        cells = []
 
-        index += 1
-        cells.insert(index, new_heading_cell(
-            source=self.title, level=1))
-
-        index += 1
-        cells.insert(index, new_text_cell(
-            'markdown', source='---'))
-
-        if toc:
-            index += 1
-            cells.insert(index, new_text_cell(
-                'markdown', source=toc))
-
-        if os.path.exists(self.header):
+        # header
+        if self.header != "":
             with open(self.header, 'r') as fh:
                 header_nb = read_nb(fh, 'ipynb')
-            for cell in header_nb.worksheets[0].cells:
-                index += 1
-                cells.insert(index, cell)
+            cells.extend(header_nb.worksheets[0].cells)
 
-        index += 1
-        cells.insert(index, new_text_cell(
-            'markdown', source='---'))
+        # body
+        cells.extend(nb.worksheets[0].cells)
 
-        if os.path.exists(self.footer):
+        # footer
+        if self.footer != "":
             with open(self.footer, 'r') as fh:
                 footer_nb = read_nb(fh, 'ipynb')
-            for cell in footer_nb.worksheets[0].cells:
-                cells.append(cell)
+            cells.extend(footer_nb.worksheets[0].cells)
+
+        nb.worksheets[0].cells = cells
 
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
@@ -78,6 +54,9 @@ class ReleasePreprocessor(ExecutePreprocessor):
             cells.append(cell)
         nb.worksheets[0].cells = cells
 
+        # get the table of contents
+        self.toc = self._get_toc(cells)
+
         if self.solution:
             nb, resources = super(ReleasePreprocessor, self).preprocess(
                 nb, resources)
@@ -95,7 +74,11 @@ class ReleasePreprocessor(ExecutePreprocessor):
             if 'prompt_number' in cell:
                 del cell['prompt_number']
 
-        elif cell.cell_type in ('markdown', 'heading'):
+        elif cell.cell_type == 'markdown':
+            template = self.env.from_string(cell.source)
+            cell.source = template.render(solution=self.solution, toc=self.toc)
+
+        elif cell.cell_type == 'header':
             template = self.env.from_string(cell.source)
             cell.source = template.render(solution=self.solution)
 
@@ -107,16 +90,6 @@ class ReleasePreprocessor(ExecutePreprocessor):
                 import ipdb; ipdb.set_trace()
 
         return cell, resources
-
-    def _find_imports_cell(self, cells):
-        i = 0
-        while i < len(cells):
-            if cells[i].metadata.get("imports", False):
-                break
-            i += 1
-        if i == len(cells):
-            i = -1
-        return i
 
     def _get_toc(self, cells):
         headings = []
