@@ -1,13 +1,9 @@
-Technically, any IPython notebook can be a valid assignment. However,
-nbgrader offers several features to help instructors create
-assignments more easily.
-
-## The assignment toolbar
+# The assignment toolbar
 
 nbgrader includes an extension to the notebook interface that allows
 cells to be marked for grading.
 
-### Installation
+## Installation
 
 To install the toolbar, run the following commands on the command
 line:
@@ -29,7 +25,7 @@ $([IPython.events]).on('app_initialized.NotebookApp', function() {
 });
 ```
 
-### Usage
+## Usage
 
 Once the toolbar has been installed, you should see it in the drop
 down "Cell toolbar" menu:

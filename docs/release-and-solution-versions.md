@@ -1,0 +1,126 @@
+# Release and solution versions
+
+Often, instructors will want to create a *release* version of an
+assignment, and a *solutions* version -- one which will be given to
+students to complete, and one which will be given out only after
+students have submitted their completed assignments. This creates a
+problem for instructors who want to keep the release version and the
+solution version synchronized.
+
+One remedy for this problem is to have one master version -- a
+"template" version -- which is then converted to either a release
+version or a solution version.
+
+## Master Version
+
+The "master version" is just a standard IPython notebook. By default,
+everything in the master version will go in both the release version
+and in the solutions version.
+
+There are two ways to mark something for "release only" or "solution
+only":
+
+* Using the [assignment toolbar](assignment-toolbar.md), mark whole
+cells as "Release only" or "Solution only".
+
+* Using templates, mark *parts* of cells as only for release or only
+for solution. A template will typically look like this:
+
+```python
+{% if solution %}
+# solution text/code goes here
+# (any number of lines is fine)
+{% else %}
+# whatever default text/code or prompt you want to display in the
+# release version goes here
+{% endif %}
+```
+
+Here is an example of such a template in action (note that the `{%
+else %}` clause is not required -- if it is excluded, then nothing
+will be included in the release version):
+
+![](images/example_template.png)
+
+The release version will look like this:
+
+```python
+def hello(name):
+    # YOUR CODE HERE
+```
+
+And the solution version will look like this:
+
+```python
+def hello(name):
+    # YOUR CODE HERE
+    return "Hello, {}!".format(name)
+```
+
+## nbconvert configuration
+
+To convert the master version into either a release version or a
+solution version, you must use nbconvert. The easiest way to do this
+is to create a file called `ipython_nbconvert_config.py` in the same
+directory as your assignment notebook. The simplest example would look
+something like this:
+
+```python
+c = get_config()
+c.NbConvertApp.export_format = 'notebook'
+c.Exporter.preprocessors = ['nbgrader.ReleasePreprocessor']
+```
+
+Which tells nbconvert to convert to notebook format, and to use the
+`ReleasePreprocessor` from nbgrader. Then, you would use two different
+command line invocations to get either the release version or the
+solution version.
+
+### Release version
+
+At the command line, run:
+
+```bash
+ipython nbconvert master.ipynb --output=release.ipynb --ReleasePreprocessor.solution=False
+```
+
+This will convert the `master.ipynb` notebook to a new notebook called
+`release.ipynb`.
+
+### Solution version
+
+At the command line, run:
+
+```bash
+ipython nbconvert master.ipynb --output=solution.ipynb --ReleasePreprocessor.solution=True
+```
+
+This will convert the `master.ipynb` notebook to a new notebook called
+`solution.ipynb`.
+
+## Conversion options
+
+The `ReleasePreprocessor` offers several conversion options that you
+may find useful:
+
+* `ReleasePreprocessor.solution` -- boolean, whether a release version
+  should be produced, or a solution version
+* `ReleasePreprocessor.header` -- path to a "header" notebook, whose
+  cells will be inserted at the beginning of the assignment. These
+  cells will be also processed like the master notebook cells, so you
+  can still mark them as solution/release only and use templates.
+* `ReleasePreprocessor.footer` -- path to a "footer" notebook, whose
+  cells will be appended to the end of the assignment. Like the
+  header, hese cells will be also processed like the master notebook
+  cells, so you can still mark them as solution/release only and use
+  templates.
+
+These options can be specified on the command line, or in the
+`ipython_nbconvert_config.py` configuration file.
+
+Additionally, there are some handy templating variables that you can
+insert into any markdown cell in your document. The syntax them for
+them is `{{ variable_name }}`.
+
+* `toc` -- a table of contents for the assignment, based on heading
+  cells.
