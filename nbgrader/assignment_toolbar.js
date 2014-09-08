@@ -32,7 +32,7 @@ define([
                 cell_type = cell.metadata.assignment.cell_type;
             }
 
-            if (!points_elem) {
+            if (elem && !points_elem) {
                 points_elem = elem.find(".assignment-points");
             }
 
