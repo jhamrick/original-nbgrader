@@ -12,4 +12,4 @@ Assignment\ Solution.ipynb: Assignment\ Template.ipynb ipython_nbconvert_config.
 
 clean:
 	rm -rf Assignment.ipynb
-	rm -rf Assignment\ Solution.html
+	rm -rf Assignment\ Solution.ipynb

@@ -3,6 +3,8 @@ from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
 from IPython.nbformat.current import read as read_nb
 
+from . import util
+
 
 class ReleasePreprocessor(ExecutePreprocessor):
 
@@ -35,27 +37,18 @@ class ReleasePreprocessor(ExecutePreprocessor):
                 footer_nb = read_nb(fh, 'ipynb')
             cells.extend(footer_nb.worksheets[0].cells)
 
-        nb.worksheets[0].cells = cells
+        # filter out various cells
+        nb.worksheets[0].cells = self.filter_cells(cells)
 
+        # remove the cell toolbar, if it exists
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
 
-        # filter out various cells
-        cells = []
-        for cell in nb.worksheets[0].cells:
-            meta = cell.metadata.get('assignment', {})
-            cell_type = meta.get('cell_type', '-')
-            if cell_type == 'skip':
-                continue
-            elif cell_type == 'release' and self.solution:
-                continue
-            elif cell_type == 'solution' and not self.solution:
-                continue
-            cells.append(cell)
-        nb.worksheets[0].cells = cells
+        # render points that are in any headings
+        self.format_points(cells)
 
         # get the table of contents
-        self.toc = self._get_toc(cells)
+        self.toc = util.get_toc(cells)
 
         if self.solution:
             nb, resources = super(ReleasePreprocessor, self).preprocess(
@@ -65,6 +58,31 @@ class ReleasePreprocessor(ExecutePreprocessor):
                 nb, resources)
 
         return nb, resources
+
+    def format_points(self, cells):
+        util.mark_headings(cells)
+        heading_points = util.get_points(cells)
+        for cell in cells:
+            tree = cell.metadata.get('tree', None)
+            if tree in heading_points:
+                points = heading_points[tree]
+                template = self.env.from_string(cell.source)
+                cell.source = template.render(
+                    solution=self.solution, points=points)
+
+    def filter_cells(self, cells):
+        new_cells = []
+        for cell in cells:
+            meta = cell.metadata.get('assignment', {})
+            cell_type = meta.get('cell_type', '-')
+            if cell_type == 'skip':
+                continue
+            elif cell_type == 'release' and self.solution:
+                continue
+            elif cell_type == 'solution' and not self.solution:
+                continue
+            new_cells.append(cell)
+        return new_cells
 
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == 'code':
@@ -90,24 +108,3 @@ class ReleasePreprocessor(ExecutePreprocessor):
                 import ipdb; ipdb.set_trace()
 
         return cell, resources
-
-    def _get_toc(self, cells):
-        headings = []
-        for cell in cells:
-            if cell.cell_type != 'heading':
-                continue
-            headings.append((cell.level, cell.source))
-
-        if len(headings) == 0:
-            return None
-
-        min_level = min(x[0] for x in headings)
-        toc = []
-        for level, source in headings:
-            indent = "\t" * (level - min_level)
-            link = '<a href="#{}">{}</a>'.format(
-                source.replace(" ", "-"), source)
-            toc.append("{}* {}".format(indent, link))
-        toc = "\n".join(toc)
-
-        return toc
