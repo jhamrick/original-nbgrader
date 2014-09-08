@@ -56,6 +56,22 @@ define([
             }
         },
 
+        updateId = function (cell, cell_type, id_elem) {
+            var elem = cell.element;
+
+            if (elem) {
+                if (!id_elem) {
+                    id_elem = elem.find(".assignment-id");
+                }
+
+                if (cell_type === "grade") {
+                    id_elem.show();
+                } else {
+                    id_elem.hide();
+                }
+            }
+        },
+
         select_type = CellToolbar.utils.select_ui_generator(
             [
                 ["-"             , "-"        ],
@@ -73,12 +89,14 @@ define([
                 var cell_type = getCellType(cell);
                 updateGradeable(cell, cell_type);
                 updatePoints(cell, cell_type);
+                updateId(cell, cell_type);
             },
 
             function (cell) {
                 var cell_type = getCellType(cell);
                 updateGradeable(cell, cell_type);
                 updatePoints(cell, cell_type);
+                updateId(cell, cell_type);
                 return cell_type;
             }
         ),
@@ -120,6 +138,43 @@ define([
             updatePoints(cell, cell_type, button_container);
         },
 
+        getId = function (cell) {
+            if (cell.metadata.assignment === undefined) {
+                return undefined;
+            } else {
+                return cell.metadata.assignment.id;
+            }
+        },
+
+        setId = function (cell, value) {
+            if (cell.metadata.assignment === undefined) {
+                cell.metadata.assignment = {};
+            }
+            cell.metadata.assignment.id = value;
+        },
+
+        id = function (div, cell, celltoolbar) {
+            var button_container = $(div);
+            button_container.addClass("assignment-id");
+
+            var text = $('<input/>').attr('type', 'text');
+            var lbl = $('<label/>').append($('<span/>').text("Problem ID: "));
+            lbl.append(text);
+
+            text.addClass("assignment-id-input");
+            text.attr("value", getId(cell));
+            text.keyup(function(){
+                setId(cell, text.val());
+            });
+
+            button_container.append($('<span/>').append(lbl));
+            IPython.keyboard_manager.register_events(text);
+
+            var cell_type = getCellType(cell);
+            updateGradeable(cell, cell_type);
+            updateId(cell, cell_type, button_container);
+        },
+
         load_css = function () {
             var link = document.createElement("link");
             link.type = "text/css";
@@ -133,8 +188,14 @@ define([
             load_css();
             CellToolbar.register_callback('create_assignment.select', select_type);
             CellToolbar.register_callback('create_assignment.points', points);
+            CellToolbar.register_callback('create_assignment.id', id);
 
-            var create_preset = ['create_assignment.select', 'create_assignment.points'];
+            var create_preset = [
+                'create_assignment.select', 
+                'create_assignment.points',
+                'create_assignment.id'
+            ];
+
             CellToolbar.register_preset('Create Assignment', create_preset, notebook);
             console.log('Assignment extension for metadata editing loaded.');
 

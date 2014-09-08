@@ -1,4 +1,4 @@
-div.assignment-points {
+div.assignment-points div.assignment-id {
     margin-left: 0.5em;
     display: none;
 }
@@ -7,6 +7,11 @@ input.assignment-points-input {
     width: 3em;
     height: 22px;
     text-align: right;
+}
+
+input.assignment-id-input {
+    height: 22px;
+    text-align: left;
 }
 
 div.assignment-gradeable-cell {
