@@ -21,7 +21,10 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
     def __init__(self, *args, **kwargs):
         super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
-        self.env = Environment(trim_blocks=True, lstrip_blocks=True)
+        self.env = Environment(
+            trim_blocks=True,
+            lstrip_blocks=True,
+            keep_trailing_newline=False)
 
     def preprocess(self, nb, resources):
         cells = []
@@ -110,14 +113,20 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         if cell.cell_type == 'code':
             template = self.env.from_string(cell.input)
-            cell.input = template.render(**kwargs)
+            rendered = template.render(**kwargs)
             cell.outputs = []
             if 'prompt_number' in cell:
                 del cell['prompt_number']
+            if rendered[-1] == "\n":
+                rendered = rendered[:-1]
+            cell.input = rendered
 
         elif cell.cell_type in ('markdown', 'heading'):
             template = self.env.from_string(cell.source)
-            cell.source = template.render(**kwargs)
+            rendered = template.render(**kwargs)
+            if rendered[-1] == "\n":
+                rendered = rendered[:-1]
+            cell.source = rendered
 
         if 'points' not in resources:
             resources['points'] = {}
