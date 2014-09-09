@@ -15,6 +15,9 @@ class AssignmentPreprocessor(ExecutePreprocessor):
     header = Unicode("", config=True, info_test="Path to header notebook")
     footer = Unicode("", config=True, info_test="Path to footer notebook")
     title = Unicode("", config=True, info_test="Title of the assignment")
+    disable_toolbar = Bool(
+        True, config=True,
+        info_test="Whether to hide the assignment toolbar after conversion")
 
     def __init__(self, *args, **kwargs):
         super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
@@ -50,6 +53,9 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         # get the table of contents
         self.toc = util.get_toc(cells)
+
+        # mark in the notebook metadata whether it's a solution or not
+        nb.metadata['disable_assignment_toolbar'] = self.disable_toolbar
 
         if self.solution:
             nb, resources = super(AssignmentPreprocessor, self).preprocess(

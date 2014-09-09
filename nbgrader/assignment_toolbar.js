@@ -186,18 +186,22 @@ define([
 
         register = function (notebook) {
             load_css();
-            CellToolbar.register_callback('create_assignment.select', select_type);
-            CellToolbar.register_callback('create_assignment.points', points);
-            CellToolbar.register_callback('create_assignment.id', id);
 
-            var create_preset = [
-                'create_assignment.select', 
-                'create_assignment.points',
-                'create_assignment.id'
-            ];
+            var metadata = IPython.notebook.metadata;
+            if (!metadata.disable_assignment_toolbar) {
+                CellToolbar.register_callback('create_assignment.select', select_type);
+                CellToolbar.register_callback('create_assignment.points', points);
+                CellToolbar.register_callback('create_assignment.id', id);
 
-            CellToolbar.register_preset('Create Assignment', create_preset, notebook);
-            console.log('Assignment extension for metadata editing loaded.');
+                var create_preset = [
+                    'create_assignment.select', 
+                    'create_assignment.points',
+                    'create_assignment.id'
+                ];
+
+                CellToolbar.register_preset('Create Assignment', create_preset, notebook);
+                console.log('Assignment extension for metadata editing loaded.');
+            }
 
             // update css class for whether cells are gradeable
             var cells = IPython.notebook.get_cells();

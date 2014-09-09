@@ -137,6 +137,10 @@ may find useful:
   templates.
 * `AssignmentPreprocessor.title` -- the title of the assignment, which
   can be used as a template variable name (see below).
+* `AssignmentPreprocessor.disable_toolbar` -- disable the
+  [assignment toolbar](assignment-toolbar.md) in the release and
+  solution versions, so that students cannot (easily) edit the
+  assignment's metadata.
 
 These options can be specified on the command line, or in the
 `ipython_nbconvert_config.py` configuration file.
