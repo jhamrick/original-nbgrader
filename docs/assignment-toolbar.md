@@ -5,16 +5,10 @@ cells to be marked for grading.
 
 ## Installation
 
-To install the toolbar, run the following commands on the command
-line:
-
-```
-curl -L https://rawgithub.com/jhamrick/nbgrader/master/nbgrader/assignment_toolbar.js > $(ipython locate)/nbextensions/assignment.js
-curl -L https://rawgithub.com/jhamrick/nbgrader/master/nbgrader/assignment_toolbar.css > $(ipython locate)/nbextensions/assignment.css
-```
-
-Then, edit your `custom.js` (found in `$(ipython locate
-profile)/static/custom/custom.js`) to include the following:
+To install the toolbar, make sure you have installed nbgrader (follow
+the instructions [here](index.md). Then, edit your `custom.js` (found
+in `$(ipython locate profile)/static/custom/custom.js`) to include the
+following:
 
 ```javascript
 $([IPython.events]).on('app_initialized.NotebookApp', function() {
