@@ -6,6 +6,9 @@ def mark_headings(cells):
             continue
         headings.append((cell.level, cell.source, cell))
 
+    if len(headings) == 0:
+        return
+
     # then figure out the hierarchy of each heading
     min_level = min(x[0] for x in headings)
     curr_heading = [''] * min_level
@@ -24,8 +27,12 @@ def mark_headings(cells):
 
 
 def get_points(cells):
+    try:
+        min_level = min(x.level for x in cells if x.cell_type == 'heading')
+    except ValueError:
+        min_level = 1
+
     heading_points = {}
-    min_level = min(x.level for x in cells if x.cell_type == 'heading')
     last_heading = [''] * min_level
     for cell in cells:
         if cell.cell_type == 'heading':
@@ -51,6 +58,9 @@ def get_points(cells):
 
 def get_toc(cells):
     headings = [x for x in cells if x.cell_type == 'heading']
+    if len(headings) == 0:
+        return []
+
     min_level = min(x.level for x in headings)
     toc = []
     for cell in headings:
