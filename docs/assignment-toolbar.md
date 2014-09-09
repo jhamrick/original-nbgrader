@@ -6,7 +6,7 @@ cells to be marked for grading.
 ## Installation
 
 To install the toolbar, make sure you have installed nbgrader (follow
-the instructions [here](index.md). Then, edit your `custom.js` (found
+the instructions [here](index.md)). Then, edit your `custom.js` (found
 in `$(ipython locate profile)/static/custom/custom.js`) to include the
 following:
 
