@@ -6,7 +6,7 @@ from IPython.nbformat.current import read as read_nb
 from . import util
 
 
-class ReleasePreprocessor(ExecutePreprocessor):
+class AssignmentPreprocessor(ExecutePreprocessor):
 
     solution = Bool(
         False, config=True,
@@ -14,9 +14,10 @@ class ReleasePreprocessor(ExecutePreprocessor):
 
     header = Unicode("", config=True, info_test="Path to header notebook")
     footer = Unicode("", config=True, info_test="Path to footer notebook")
+    title = Unicode("", config=True, info_test="Title of the assignment")
 
     def __init__(self, *args, **kwargs):
-        super(ReleasePreprocessor, self).__init__(*args, **kwargs)
+        super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
         self.env = Environment(trim_blocks=True, lstrip_blocks=True)
 
     def preprocess(self, nb, resources):
@@ -44,31 +45,20 @@ class ReleasePreprocessor(ExecutePreprocessor):
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
 
-        # render points that are in any headings
-        self.format_points(cells)
+        # figure out what the headings are for each cell
+        util.mark_headings(cells)
 
         # get the table of contents
         self.toc = util.get_toc(cells)
 
         if self.solution:
-            nb, resources = super(ReleasePreprocessor, self).preprocess(
+            nb, resources = super(AssignmentPreprocessor, self).preprocess(
                 nb, resources)
         else:
             nb, resources = super(ExecutePreprocessor, self).preprocess(
                 nb, resources)
 
         return nb, resources
-
-    def format_points(self, cells):
-        util.mark_headings(cells)
-        heading_points = util.get_points(cells)
-        for cell in cells:
-            tree = cell.metadata.get('tree', None)
-            if tree in heading_points:
-                points = heading_points[tree]
-                template = self.env.from_string(cell.source)
-                cell.source = template.render(
-                    solution=self.solution, points=points)
 
     def filter_cells(self, cells):
         new_cells = []
@@ -84,27 +74,52 @@ class ReleasePreprocessor(ExecutePreprocessor):
             new_cells.append(cell)
         return new_cells
 
+    def process_points(self, cell, points):
+        meta = cell.metadata.get('assignment', {})
+        assignment_cell_type = meta.get('cell_type', '-')
+        if assignment_cell_type == 'grade':
+            tree = cell.metadata.get('tree', '')
+            for level in tree:
+                if level not in points:
+                    points[level] = {}
+                points = points[level]
+
+            cell_points = meta.get('points', 0)
+            cell_id = meta.get('id', '')
+
+            if 'problems' not in points:
+                points['problems'] = []
+
+            points['problems'].append(dict(
+                id=cell_id,
+                points=float(cell_points),
+                type=cell.cell_type))
+
     def preprocess_cell(self, cell, resources, cell_index):
+        kwargs = {
+            "solution": self.solution,
+            "toc": self.toc,
+            "title": self.title
+        }
+
         if cell.cell_type == 'code':
             template = self.env.from_string(cell.input)
-            cell.input = template.render(solution=self.solution)
+            cell.input = template.render(**kwargs)
             cell.outputs = []
             if 'prompt_number' in cell:
                 del cell['prompt_number']
 
-        elif cell.cell_type == 'markdown':
+        elif cell.cell_type in ('markdown', 'heading'):
             template = self.env.from_string(cell.source)
-            cell.source = template.render(solution=self.solution, toc=self.toc)
+            cell.source = template.render(**kwargs)
 
-        elif cell.cell_type == 'header':
-            template = self.env.from_string(cell.source)
-            cell.source = template.render(solution=self.solution)
+        if 'points' not in resources:
+            resources['points'] = {}
+
+        self.process_points(cell, resources['points'])
 
         if self.solution:
-            try:
-                cell, resources = super(ReleasePreprocessor, self)\
-                    .preprocess_cell(cell, resources, cell_index)
-            except:
-                import ipdb; ipdb.set_trace()
+            cell, resources = super(AssignmentPreprocessor, self)\
+                .preprocess_cell(cell, resources, cell_index)
 
         return cell, resources
