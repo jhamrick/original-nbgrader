@@ -27,6 +27,15 @@
       "type": "markdown"
      }
     ]
+   }, 
+   "Part C": {
+    "problems": [
+     {
+      "id": "sum_of_squares_plot", 
+      "points": 1.0, 
+      "type": "code"
+     }
+    ]
    }
   }
  }

@@ -17,3 +17,8 @@ input.assignment-id-input {
 div.assignment-gradeable-cell {
     background-color: #FFA;
 }
+
+.ui-resizable {
+    background-color: white;
+    border: solid 1px #999;
+}
