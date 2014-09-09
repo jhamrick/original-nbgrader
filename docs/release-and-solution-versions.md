@@ -85,11 +85,13 @@ something like this:
 ```python
 c = get_config()
 c.NbConvertApp.export_format = 'notebook'
-c.Exporter.preprocessors = ['nbgrader.ReleasePreprocessor']
+c.NbConvertApp.writer_class = 'nbgrader.AssignmentWriter'
+c.Exporter.preprocessors = ['nbgrader.AssignmentPreprocessor']
 ```
 
-Which tells nbconvert to convert to notebook format, and to use the
-`ReleasePreprocessor` from nbgrader. Then, you would use two different
+Which tells nbconvert to convert to notebook format, to write out the
+converted file using `AssignmentWriter` from nbgrader, and to use the
+`AssignmentPreprocessor` from nbgrader. Then, you would use two different
 command line invocations to get either the release version or the
 solution version.
 
@@ -98,7 +100,7 @@ solution version.
 At the command line, run:
 
 ```bash
-ipython nbconvert master.ipynb --output=release.ipynb --ReleasePreprocessor.solution=False
+ipython nbconvert master.ipynb --output=release.ipynb --AssignmentPreprocessor.solution=False
 ```
 
 This will convert the `master.ipynb` notebook to a new notebook called
@@ -109,7 +111,7 @@ This will convert the `master.ipynb` notebook to a new notebook called
 At the command line, run:
 
 ```bash
-ipython nbconvert master.ipynb --output=solution.ipynb --ReleasePreprocessor.solution=True
+ipython nbconvert master.ipynb --output=solution.ipynb --AssignmentPreprocessor.solution=True
 ```
 
 This will convert the `master.ipynb` notebook to a new notebook called
@@ -117,23 +119,49 @@ This will convert the `master.ipynb` notebook to a new notebook called
 
 ## Conversion options
 
-The `ReleasePreprocessor` offers several conversion options that you
+### Assignment preprocessor
+
+The `AssignmentPreprocessor` offers several conversion options that you
 may find useful:
 
-* `ReleasePreprocessor.solution` -- boolean, whether a release version
+* `AssignmentPreprocessor.solution` -- boolean, whether a release version
   should be produced, or a solution version
-* `ReleasePreprocessor.header` -- path to a "header" notebook, whose
+* `AssignmentPreprocessor.header` -- path to a "header" notebook, whose
   cells will be inserted at the beginning of the assignment. These
   cells will be also processed like the master notebook cells, so you
   can still mark them as solution/release only and use templates.
-* `ReleasePreprocessor.footer` -- path to a "footer" notebook, whose
+* `AssignmentPreprocessor.footer` -- path to a "footer" notebook, whose
   cells will be appended to the end of the assignment. Like the
   header, hese cells will be also processed like the master notebook
   cells, so you can still mark them as solution/release only and use
   templates.
+* `AssignmentPreprocessor.title` -- the title of the assignment, which
+  can be used as a template variable name (see below).
 
 These options can be specified on the command line, or in the
 `ipython_nbconvert_config.py` configuration file.
+
+### Assignment writer
+
+The `AssignmentWriter` also offers conversion options that you may
+find useful:
+
+* `AssignmentWriter.build_director` -- where to save the outputted
+  files to. This can be useful if converting multiple notebooks at
+  once (e.g., for an assignment in which each notebook corresponds to
+  a different problem).
+* `AssignmentWriter.files` -- files that the notebook(s) depend on
+  (e.g. images)
+* `AssignmentWriter.save_rubric` -- whether to save out a JSON file
+  with information about the different parts of the problem and how
+  much each is worth.
+* `AssignmentWriter.rubric_file` -- the name of the file to which the
+  rubric should be saved, not including the ".json" extension.
+
+These options can be specified on the command line, or in the
+`ipython_nbconvert_config.py` configuration file.
+
+### Template variables
 
 Additionally, there are some handy templating variables that you can
 insert into any markdown cell in your document. The syntax them for
@@ -141,5 +169,5 @@ them is `{{ variable_name }}`.
 
 * `toc` -- a table of contents for the assignment, based on heading
   cells.
-* `points` -- the number of points that a particular problem or
-  subproblem is worth. This should ONLY be used within heading cells.
+* `title` -- the title of the assignment, as specified by
+  `AssignmentPreprocessor.title`.

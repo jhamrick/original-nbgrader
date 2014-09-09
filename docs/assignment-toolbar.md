@@ -46,12 +46,17 @@ menu with a default value of "-". Other values include:
 * "Skip" -- this cell should not be included in either the release
   version or or the solution version of the assignment.
 
-If you select "To be graded" for a cell, it has two additional effects:
+If you select "To be graded" for a cell, it has a few additional
+effects:
 
 * The area around the cell will turn yellow, making it more visible to
   instructors and to students.
 * A text box labeled "Points" will appear. In this, you can mark how
   many points this part of the assignment is worth.
+* A text box labeled "Problem ID" will appear. In this, you can give
+  the problem that is to be graded a unique identifier. This id can be
+  used to produce a rubric of the various parts of the problem, and
+  also later down the line when autograding.
 
 Here is an example "To be graded" cell:
 
