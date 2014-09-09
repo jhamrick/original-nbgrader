@@ -44,8 +44,8 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
 
-        # render points that are in any headings
-        self.format_points(cells)
+        # figure out what the headings are for each cell
+        util.mark_headings(cells)
 
         # get the table of contents
         self.toc = util.get_toc(cells)
@@ -58,17 +58,6 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 nb, resources)
 
         return nb, resources
-
-    def format_points(self, cells):
-        util.mark_headings(cells)
-        heading_points = util.get_points(cells)
-        for cell in cells:
-            tree = cell.metadata.get('tree', None)
-            if tree in heading_points:
-                points = heading_points[tree]
-                template = self.env.from_string(cell.source)
-                cell.source = template.render(
-                    solution=self.solution, points=points)
 
     def filter_cells(self, cells):
         new_cells = []
@@ -96,15 +85,12 @@ class AssignmentPreprocessor(ExecutePreprocessor):
             template = self.env.from_string(cell.source)
             cell.source = template.render(solution=self.solution, toc=self.toc)
 
-        elif cell.cell_type == 'header':
+        elif cell.cell_type == 'heading':
             template = self.env.from_string(cell.source)
             cell.source = template.render(solution=self.solution)
 
         if self.solution:
-            try:
-                cell, resources = super(AssignmentPreprocessor, self)\
-                    .preprocess_cell(cell, resources, cell_index)
-            except:
-                import ipdb; ipdb.set_trace()
+            cell, resources = super(AssignmentPreprocessor, self)\
+                .preprocess_cell(cell, resources, cell_index)
 
         return cell, resources
