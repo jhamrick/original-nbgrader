@@ -6,7 +6,7 @@ from IPython.nbformat.current import read as read_nb
 from . import util
 
 
-class ReleasePreprocessor(ExecutePreprocessor):
+class AssignmentPreprocessor(ExecutePreprocessor):
 
     solution = Bool(
         False, config=True,
@@ -16,7 +16,7 @@ class ReleasePreprocessor(ExecutePreprocessor):
     footer = Unicode("", config=True, info_test="Path to footer notebook")
 
     def __init__(self, *args, **kwargs):
-        super(ReleasePreprocessor, self).__init__(*args, **kwargs)
+        super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
         self.env = Environment(trim_blocks=True, lstrip_blocks=True)
 
     def preprocess(self, nb, resources):
@@ -51,7 +51,7 @@ class ReleasePreprocessor(ExecutePreprocessor):
         self.toc = util.get_toc(cells)
 
         if self.solution:
-            nb, resources = super(ReleasePreprocessor, self).preprocess(
+            nb, resources = super(AssignmentPreprocessor, self).preprocess(
                 nb, resources)
         else:
             nb, resources = super(ExecutePreprocessor, self).preprocess(
@@ -102,7 +102,7 @@ class ReleasePreprocessor(ExecutePreprocessor):
 
         if self.solution:
             try:
-                cell, resources = super(ReleasePreprocessor, self)\
+                cell, resources = super(AssignmentPreprocessor, self)\
                     .preprocess_cell(cell, resources, cell_index)
             except:
                 import ipdb; ipdb.set_trace()
