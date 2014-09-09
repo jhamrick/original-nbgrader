@@ -1,4 +1,4 @@
-div.assignment-points div.assignment-id {
+div.assignment-points, div.assignment-id {
     margin-left: 0.5em;
     display: none;
 }
