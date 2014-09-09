@@ -14,6 +14,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
     header = Unicode("", config=True, info_test="Path to header notebook")
     footer = Unicode("", config=True, info_test="Path to footer notebook")
+    title = Unicode("", config=True, info_test="Title of the assignment")
 
     def __init__(self, *args, **kwargs):
         super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
@@ -95,20 +96,22 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 type=cell.cell_type))
 
     def preprocess_cell(self, cell, resources, cell_index):
+        kwargs = {
+            "solution": self.solution,
+            "toc": self.toc,
+            "title": self.title
+        }
+
         if cell.cell_type == 'code':
             template = self.env.from_string(cell.input)
-            cell.input = template.render(solution=self.solution)
+            cell.input = template.render(**kwargs)
             cell.outputs = []
             if 'prompt_number' in cell:
                 del cell['prompt_number']
 
-        elif cell.cell_type == 'markdown':
+        elif cell.cell_type in ('markdown', 'heading'):
             template = self.env.from_string(cell.source)
-            cell.source = template.render(solution=self.solution, toc=self.toc)
-
-        elif cell.cell_type == 'heading':
-            template = self.env.from_string(cell.source)
-            cell.source = template.render(solution=self.solution)
+            cell.source = template.render(**kwargs)
 
         if 'points' not in resources:
             resources['points'] = {}
