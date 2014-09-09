@@ -1,31 +1,33 @@
 {
- "Problem 1": {
-  "Part A": {
+ "": {
+  "Problem 1": {
    "problems": [
     {
-     "id": "hello", 
-     "points": 1.0, 
+     "id": "squares", 
+     "points": 2.0, 
      "type": "code"
     }
    ]
   }, 
-  "Part B": {
-   "problems": [
-    {
-     "id": "goodbye", 
-     "points": 1.0, 
-     "type": "code"
-    }
-   ]
-  }
- }, 
- "Problem 2": {
-  "problems": [
-   {
-    "id": "problem2", 
-    "points": 2.0, 
-    "type": "markdown"
+  "Problem 2": {
+   "Part A": {
+    "problems": [
+     {
+      "id": "sum_of_squares", 
+      "points": 1.0, 
+      "type": "code"
+     }
+    ]
+   }, 
+   "Part B": {
+    "problems": [
+     {
+      "id": "sum_of_squares_equation", 
+      "points": 1.0, 
+      "type": "markdown"
+     }
+    ]
    }
-  ]
+  }
  }
 }
