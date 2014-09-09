@@ -4,8 +4,9 @@ import io
 import os
 import glob
 import shutil
+import json
 
-from IPython.utils.traitlets import Unicode
+from IPython.utils.traitlets import Unicode, Bool
 from IPython.utils.path import ensure_dir_exists
 from IPython.utils.py3compat import unicode_type
 
@@ -16,6 +17,10 @@ class AssignmentWriter(WriterBase):
 
     build_directory = Unicode(
         ".", config=True, help="Directory to write output to.")
+    save_rubric = Bool(
+        False, config=True, help="Whether to save out rubric file")
+    rubric_file = Unicode(
+        "rubric", config=True, help="Filename to write JSON rubric to")
 
     # Make sure that the output directory exists.
     def _build_directory_changed(self, name, old, new):
@@ -48,6 +53,19 @@ class AssignmentWriter(WriterBase):
 
         # Pull the extension and subdir from the resources dict.
         output_extension = resources.get('output_extension', None)
+
+        # Save out the rubric, if requested
+        if self.save_rubric:
+            points = resources.get('points', {})
+            rubric_file = self.rubric_file + ".json"
+            if self.build_directory:
+                dest = os.path.join(self.build_directory, rubric_file)
+            else:
+                dest = rubric_file
+
+            with io.open(dest, 'wb') as f:
+                self.log.info("Writing %s", dest)
+                json.dump(points, f, indent=1, sort_keys=True)
 
         # Copy referenced files to output directory
         if self.build_directory:

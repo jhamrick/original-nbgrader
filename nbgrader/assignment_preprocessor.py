@@ -73,6 +73,27 @@ class AssignmentPreprocessor(ExecutePreprocessor):
             new_cells.append(cell)
         return new_cells
 
+    def process_points(self, cell, points):
+        meta = cell.metadata.get('assignment', {})
+        assignment_cell_type = meta.get('cell_type', '-')
+        if assignment_cell_type == 'grade':
+            tree = cell.metadata.get('tree', '')
+            for level in tree:
+                if level not in points:
+                    points[level] = {}
+                points = points[level]
+
+            cell_points = meta.get('points', 0)
+            cell_id = meta.get('id', '')
+
+            if 'problems' not in points:
+                points['problems'] = []
+
+            points['problems'].append(dict(
+                id=cell_id,
+                points=float(cell_points),
+                type=cell.cell_type))
+
     def preprocess_cell(self, cell, resources, cell_index):
         if cell.cell_type == 'code':
             template = self.env.from_string(cell.input)
@@ -88,6 +109,11 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         elif cell.cell_type == 'heading':
             template = self.env.from_string(cell.source)
             cell.source = template.render(solution=self.solution)
+
+        if 'points' not in resources:
+            resources['points'] = {}
+
+        self.process_points(cell, resources['points'])
 
         if self.solution:
             cell, resources = super(AssignmentPreprocessor, self)\
