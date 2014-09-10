@@ -46,6 +46,9 @@ define([
 
             if (cell_type === "autograder" && !elem.hasClass(test_cls)) {
                 elem.addClass(test_cls);
+                if (IPython.notebook.metadata.hide_autograder_cells) {
+                    elem.hide();
+                }
             } else if (cell_type !== "autograder" && elem.hasClass(test_cls)) {
                 elem.removeClass(test_cls);
             }
