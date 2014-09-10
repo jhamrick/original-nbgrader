@@ -2,6 +2,7 @@ from jinja2 import Environment
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
 from IPython.nbformat.current import read as read_nb
+import numpy as np
 
 from . import util
 
@@ -62,8 +63,22 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         nb.metadata['hide_autograder_cells'] = self.hide_autograder_cells
 
         # figure out which tests go with which problems
+        self.align_tests(nb.worksheets[0].cells)
+        # update test weights
+        self.update_weights(nb.worksheets[0].cells)
+
+        if self.solution:
+            nb, resources = super(AssignmentPreprocessor, self).preprocess(
+                nb, resources)
+        else:
+            nb, resources = super(ExecutePreprocessor, self).preprocess(
+                nb, resources)
+
+        return nb, resources
+
+    def align_tests(self, cells):
         last_problem = None
-        for cell in nb.worksheets[0].cells:
+        for cell in cells:
             if 'assignment' not in cell.metadata:
                 continue
 
@@ -79,16 +94,36 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                     last_problem.metadata['assignment']['tests'] = []
 
                 cell_id = cell.metadata['assignment']['id']
-                last_problem.metadata['assignment']['tests'].append(cell_id)
+                weight = 1 #cell.metadata['assignment']['weight']
+                last_problem.metadata['assignment']['tests'].append({
+                    'id': cell_id,
+                    'weight': weight
+                })
 
-        if self.solution:
-            nb, resources = super(AssignmentPreprocessor, self).preprocess(
-                nb, resources)
-        else:
-            nb, resources = super(ExecutePreprocessor, self).preprocess(
-                nb, resources)
+    def update_weights(self, cells):
+        last_problem = None
+        for cell in cells:
+            if 'assignment' not in cell.metadata:
+                continue
 
-        return nb, resources
+            cell_type = cell.metadata['assignment']['cell_type']
+            if cell_type == "grade":
+                last_problem = cell
+                tests = last_problem.metadata['assignment'].get('tests', [])
+                normalizer = float(np.sum([x['weight'] for x in tests]))
+                for x in tests:
+                    x['weight'] = x['weight'] / normalizer
+
+            elif cell_type == "autograder":
+                if not last_problem:
+                    raise RuntimeError(
+                        "autograding cell before any gradeable cells!")
+
+                #weight = cell.metadata['assignment']['weight'] / normalizer
+                weight = 1.0 / normalizer
+                total_points = last_problem.metadata['assignment']['points']
+                points = float(total_points) * weight
+                cell.metadata['assignment']['points'] = points
 
     def filter_cells(self, cells):
         new_cells = []
