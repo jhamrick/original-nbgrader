@@ -4,8 +4,6 @@ from IPython.utils.traitlets import Bool, Unicode
 from IPython.nbformat.current import read as read_nb
 import numpy as np
 
-from . import util
-
 
 class AssignmentPreprocessor(ExecutePreprocessor):
 
@@ -56,7 +54,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
             del nb.metadata['celltoolbar']
 
         # get the table of contents
-        self.toc = util.get_toc(cells)
+        self.toc = self.get_toc(cells)
 
         # mark in the notebook metadata whether it's a solution or not
         nb.metadata['disable_assignment_toolbar'] = self.disable_toolbar
@@ -186,3 +184,24 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 .preprocess_cell(cell, resources, cell_index)
 
         return cell, resources
+
+    def get_toc(self, cells):
+        try:
+            min_level = min(x.level for x in cells if x.cell_type == 'heading')
+        except ValueError:
+            min_level = 1
+
+        toc = []
+        for cell in cells:
+            if cell.cell_type != 'heading':
+                continue
+
+            level = cell.level
+            source = cell.source
+            indent = "\t" * (level - min_level)
+            link = '<a href="#{}">{}</a>'.format(
+                source.replace(" ", "-"), source)
+            toc.append("{}* {}".format(indent, link))
+
+        toc = "\n".join(toc)
+        return toc
