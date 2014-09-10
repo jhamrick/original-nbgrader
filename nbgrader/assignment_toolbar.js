@@ -29,14 +29,28 @@ define([
             }
         },
 
-        updateGradeable = function (cell, cell_type) {
-            var cls = "assignment-gradeable-cell",
+        updateCellType = function (cell, cell_type) {
+            var grade_cls = "assignment-gradeable-cell",
+                test_cls = "assignment-autograder-cell",
                 elem = cell.element;
 
-            if (elem && cell_type === "grade" && !elem.hasClass(cls)) {
-                elem.addClass(cls);
-            } else if (elem && cell_type !== "grade" && elem.hasClass(cls)) {
-                elem.removeClass(cls);
+            if (!elem) {
+                return;
+            }
+
+            if (cell_type === "grade" && !elem.hasClass(grade_cls)) {
+                elem.addClass(grade_cls);
+            } else if (cell_type !== "grade" && elem.hasClass(grade_cls)) {
+                elem.removeClass(grade_cls);
+            }
+
+            if (cell_type === "autograder" && !elem.hasClass(test_cls)) {
+                elem.addClass(test_cls);
+                if (IPython.notebook.metadata.hide_autograder_cells) {
+                    elem.hide();
+                }
+            } else if (cell_type !== "autograder" && elem.hasClass(test_cls)) {
+                elem.removeClass(test_cls);
             }
         },
 
@@ -64,7 +78,7 @@ define([
                     id_elem = elem.find(".assignment-id");
                 }
 
-                if (cell_type === "grade") {
+                if (cell_type === "grade" || cell_type == "autograder") {
                     id_elem.show();
                 } else {
                     id_elem.hide();
@@ -74,11 +88,12 @@ define([
 
         select_type = CellToolbar.utils.select_ui_generator(
             [
-                ["-"             , "-"        ],
-                ["To be graded"  , "grade"    ],
-                ["Release only"  , "release"  ],
-                ["Solution only" , "solution" ],
-                ["Skip"          , "skip"     ],
+                ["-"             , "-"         ],
+                ["To be graded"  , "grade"     ],
+                ["Release only"  , "release"   ],
+                ["Solution only" , "solution"  ],
+                ["Skip"          , "skip"      ],
+                ["Autograder"    , "autograder"],
             ],
 
             function (cell, value) {
@@ -87,14 +102,14 @@ define([
                 }
                 cell.metadata.assignment.cell_type = value;
                 var cell_type = getCellType(cell);
-                updateGradeable(cell, cell_type);
+                updateCellType(cell, cell_type);
                 updatePoints(cell, cell_type);
                 updateId(cell, cell_type);
             },
 
             function (cell) {
                 var cell_type = getCellType(cell);
-                updateGradeable(cell, cell_type);
+                updateCellType(cell, cell_type);
                 updatePoints(cell, cell_type);
                 updateId(cell, cell_type);
                 return cell_type;
@@ -134,7 +149,7 @@ define([
             IPython.keyboard_manager.register_events(text);
 
             var cell_type = getCellType(cell);
-            updateGradeable(cell, cell_type);
+            updateCellType(cell, cell_type);
             updatePoints(cell, cell_type, button_container);
         },
 
@@ -157,8 +172,14 @@ define([
             var button_container = $(div);
             button_container.addClass("assignment-id");
 
+            var cell_type = getCellType(cell);
             var text = $('<input/>').attr('type', 'text');
-            var lbl = $('<label/>').append($('<span/>').text("Problem ID: "));
+            var lbl;
+            if (cell_type === "grade") {
+                lbl = $('<label/>').append($('<span/>').text("Problem ID: "));
+            } else {
+                lbl = $('<label/>').append($('<span/>').text("Test name: "));
+            }
             lbl.append(text);
 
             text.addClass("assignment-id-input");
@@ -170,8 +191,7 @@ define([
             button_container.append($('<span/>').append(lbl));
             IPython.keyboard_manager.register_events(text);
 
-            var cell_type = getCellType(cell);
-            updateGradeable(cell, cell_type);
+            updateCellType(cell, cell_type);
             updateId(cell, cell_type, button_container);
         },
 
@@ -206,7 +226,7 @@ define([
             // update css class for whether cells are gradeable
             var cells = IPython.notebook.get_cells();
             for (var i = 0; i < cells.length; i++) {
-                updateGradeable(cells[i], getCellType(cells[i]));
+                updateCellType(cells[i], getCellType(cells[i]));
             }
         };
 

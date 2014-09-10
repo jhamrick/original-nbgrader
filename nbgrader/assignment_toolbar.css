@@ -18,6 +18,10 @@ div.assignment-gradeable-cell {
     background-color: #FFA;
 }
 
+div.assignment-autograder-cell {
+    background-color: #DDD;
+}
+
 .ui-resizable {
     background-color: white;
     border: solid 1px #999;

@@ -1,70 +1,9 @@
 from __future__ import print_function
 
-import nose
-import types
-import os
 import jinja2
 import sys
 
-from nose.plugins.attrib import AttributeSelector
-
-from IPython.core.magic import Magics, magics_class
-from IPython.core.magic import line_magic, line_cell_magic
 from IPython.core.inputtransformer import InputTransformer
-
-
-@magics_class
-class NoseGraderMagic(Magics):
-
-    @line_cell_magic
-    def grade(self, line, cell=None):
-        ip = get_ipython()
-        if cell is not None:
-            ip.run_cell("__score__.reset(); score = __score__")
-            ip.run_cell(cell)
-        else:
-            ip.run_cell("__score__.reset(); score = __score__")
-            ip.run_cell(self.autograder_code)
-
-        # create the test module for nose
-        test_module = types.ModuleType('test_module')
-        test_module.__dict__.update(ip.user_ns)
-
-        # change the test name template to use "grade" instead of
-        # "test" (which is the default)
-        env = os.environ
-        env['NOSE_TESTMATCH'] = r'(?:^|[\b_\.%s-])[Gg]rade' % os.sep
-
-        # load user config files
-        cfg_files = nose.config.all_config_files()
-
-        # create a plugin manager
-        plug = AttributeSelector()
-        plug.attribs = [[("problem", line)]]
-        plug.enabled = True
-        mgr = nose.plugins.manager.DefaultPluginManager(
-            plugins=[plug])
-
-        # create the nose configuration object, and load the tests
-        config = nose.config.Config(env=env, files=cfg_files, plugins=mgr)
-        loader = nose.loader.TestLoader(config=config)
-        tests = loader.loadTestsFromModule(test_module)
-
-        # run the tests
-        nose.core.TestProgram(
-            argv=["autograder", "--verbose"],
-            suite=tests, exit=False, config=config)
-
-        # create a pandas dataframe of the scores, and return it
-        if '__score__' in test_module.__dict__:
-            return test_module.__dict__['__score__'].as_dataframe()
-
-    @line_magic
-    def load_autograder(self, line):
-        ip = get_ipython()
-        ip.run_cell("from nbgrader import Score as __score__")
-        with open(line, 'r') as fh:
-            self.autograder_code = fh.read()
 
 
 class SolutionInputTransformer(InputTransformer):
@@ -77,9 +16,10 @@ class SolutionInputTransformer(InputTransformer):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, solution, *args, **kwargs):
         super(SolutionInputTransformer, self).__init__(*args, **kwargs)
 
+        self.solution = solution
         self.env = jinja2.Environment()
         self._lines = []
 
@@ -92,13 +32,17 @@ class SolutionInputTransformer(InputTransformer):
         self._lines = []
         template = self.env.from_string(text)
         try:
-            return template.render(solution=True)
+            return template.render(solution=self.solution)
         except Exception as e:
             print("Failed to render jinja template: %s" % e, file=sys.stderr)
             return text
 
 
-def run_solutions(line):
+def render_template_as(line):
+    if line.strip() not in ("solution", "release"):
+        raise ValueError("invalid mode: {}".format(line.strip()))
+    solution = line.strip() == "solution"
+
     ip = get_ipython()
     transforms = ip.input_transformer_manager.python_line_transforms
-    transforms.append(SolutionInputTransformer())
+    transforms.append(SolutionInputTransformer(solution))

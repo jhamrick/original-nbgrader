@@ -4,11 +4,11 @@ all: release solution
 
 release: Assignment.ipynb
 Assignment.ipynb: Assignment\ Template.ipynb ipython_nbconvert_config.py
-	ipython nbconvert "$<" --output="$@" --AssignmentPreprocessor.solution=False --AssignmentWriter.save_rubric=False
+	ipython nbconvert "$<" --output="$@" --AssignmentPreprocessor.solution=False --AssignmentWriter.save_rubric=False --AssignmentWriter.save_autograder_tests=False
 
 solution: Assignment\ Solution.ipynb rubric.json
 Assignment\ Solution.ipynb rubric.json: Assignment\ Template.ipynb ipython_nbconvert_config.py
-	ipython nbconvert "$<" --output="$@" --AssignmentPreprocessor.solution=True --AssignmentWriter.save_rubric=True
+	ipython nbconvert "$<" --output="$@" --AssignmentPreprocessor.solution=True --AssignmentWriter.save_rubric=True --AssignmentWriter.save_autograder_tests=True
 
 clean:
 	rm -rf Assignment.ipynb

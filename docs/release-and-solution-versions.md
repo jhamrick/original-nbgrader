@@ -62,17 +62,20 @@ def hello(name):
 When developing your assignment, you probably want to be working with
 the solutions, so you know that they are correct. Unfortunately, the
 templates make that difficult because they are not valid Python
-syntax. To resolve this, you can use the `%run_solutions` magic, which
-will treat template cells as if `solution == True`, allowing them to
-be run. To use the magic, create and run a cell with the following:
+syntax. To resolve this, you can use the `%render_template_as` magic,
+which takes a single argument of either `solution` or `release`. It
+will then treat template cells accordingly as if they were either for
+the solution or the release version, allowing them to be run. To use
+the magic, create and run a cell with the following:
 
 ```python
 %load_ext nbgrader
-%run_solutions
+%render_template_as <mode>
 ```
 
-(You probably also want to mark that cell as "Skip", so that it is not
-included in the release or solution version of the assignment).
+Where `<mode>` should be either `solution` or `release`. You may also
+want to mark that cell as "Skip", so that it is not included in the
+release or solution version of the assignment.
 
 ## nbconvert configuration
 
@@ -141,6 +144,8 @@ may find useful:
   [assignment toolbar](assignment-toolbar.md) in the release and
   solution versions, so that students cannot (easily) edit the
   assignment's metadata.
+* `AssignmentPreprocessor.hide_autograder_cells` -- whether or not to
+  hide autograding cells in release or solution version.
 
 These options can be specified on the command line, or in the
 `ipython_nbconvert_config.py` configuration file.
@@ -161,6 +166,13 @@ find useful:
   much each is worth.
 * `AssignmentWriter.rubric_file` -- the name of the file to which the
   rubric should be saved, not including the ".json" extension.
+* `AssignmentWriter.save_autograder_tests` -- whether to save out a
+  JSON file with information about the autograder tests, including
+  their source code and how many points each test is worth (to allow
+  for partial credit).
+* `AssignmentWriter.autograder_test_file` -- the name of the file to
+  which the autograder tests will be saved, not including the ".json"
+  extension.
 
 These options can be specified on the command line, or in the
 `ipython_nbconvert_config.py` configuration file.

@@ -39,6 +39,10 @@ menu with a default value of "-". Other values include:
   version of the assignment.
 * "Skip" -- this cell should not be included in either the release
   version or or the solution version of the assignment.
+* "Autograder" -- this cell contains autograding tests for the most
+  recent "To be graded" cell.
+
+### "To be graded" cells
 
 If you select "To be graded" for a cell, it has a few additional
 effects:
@@ -55,3 +59,15 @@ effects:
 Here is an example "To be graded" cell:
 
 ![](images/to_be_graded.png)
+
+### "Autograder" cells
+
+If you select "Autograder" for a cell, it also has some effects:
+
+* The area around the cell will turn gray, making it more visible to
+  instructors.
+* A text box labeled "Test name" will appear. In this, you can give
+  the autograding test a unique identifier.
+
+In general, autograding cells should contain assert statements (or the
+like), and act as tests for the most recent "to be graded" cell.

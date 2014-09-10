@@ -8,6 +8,8 @@ install:
 
 develop:
 	pip install -e .
+	rm -f $(IPYDIR)/nbextensions/assignment.js
+	rm -f $(IPYDIR)/nbextensions/assignment.css
 	ln nbgrader/assignment_toolbar.js $(IPYDIR)/nbextensions/assignment.js
 	ln nbgrader/assignment_toolbar.css $(IPYDIR)/nbextensions/assignment.css
 

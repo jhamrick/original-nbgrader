@@ -21,6 +21,11 @@ class AssignmentWriter(WriterBase):
         False, config=True, help="Whether to save out rubric file")
     rubric_file = Unicode(
         "rubric", config=True, help="Filename to write JSON rubric to")
+    save_autograder_tests = Bool(
+        False, config=True, help="Whether to save out autograder tests")
+    autograder_test_file = Unicode(
+        "autograder_tests", config=True,
+        help="Filename to write JSON autograder tests to")
 
     # Make sure that the output directory exists.
     def _build_directory_changed(self, name, old, new):
@@ -56,7 +61,7 @@ class AssignmentWriter(WriterBase):
 
         # Save out the rubric, if requested
         if self.save_rubric:
-            points = resources.get('points', {})
+            rubric = resources.get('rubric', {})
             rubric_file = self.rubric_file + ".json"
             if self.build_directory:
                 dest = os.path.join(self.build_directory, rubric_file)
@@ -65,7 +70,20 @@ class AssignmentWriter(WriterBase):
 
             with io.open(dest, 'wb') as f:
                 self.log.info("Writing %s", dest)
-                json.dump(points, f, indent=1, sort_keys=True)
+                json.dump(rubric, f, indent=1, sort_keys=True)
+
+        # Save out the autograder tests, if requested
+        if self.save_autograder_tests:
+            tests = resources.get('tests', {})
+            test_file = self.autograder_test_file + ".json"
+            if self.build_directory:
+                dest = os.path.join(self.build_directory, test_file)
+            else:
+                dest = test_file
+
+            with io.open(dest, 'wb') as f:
+                self.log.info("Writing %s", dest)
+                json.dump(tests, f, indent=1, sort_keys=True)
 
         # Copy referenced files to output directory
         if self.build_directory:
