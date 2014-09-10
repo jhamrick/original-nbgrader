@@ -44,5 +44,5 @@ def render_template_as(line):
     solution = line.strip() == "solution"
 
     ip = get_ipython()
-    transforms = ip.input_transformer_manager.python_line_transforms
-    transforms.append(SolutionInputTransformer(solution))
+    transforms = ip.input_transformer_manager.physical_line_transforms
+    transforms.insert(0, SolutionInputTransformer(solution))
