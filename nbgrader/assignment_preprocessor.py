@@ -63,9 +63,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         nb.metadata['hide_autograder_cells'] = self.hide_autograder_cells
 
         # figure out which tests go with which problems
-        self.align_tests(nb.worksheets[0].cells)
-        # update test weights
-        self.update_weights(nb.worksheets[0].cells)
+        self.extract_tests(nb.worksheets[0].cells, resources)
 
         if self.solution:
             nb, resources = super(AssignmentPreprocessor, self).preprocess(
@@ -74,56 +72,63 @@ class AssignmentPreprocessor(ExecutePreprocessor):
             nb, resources = super(ExecutePreprocessor, self).preprocess(
                 nb, resources)
 
+        # make the rubric
+        self.make_rubric(nb.worksheets[0].cells, resources)
+
         return nb, resources
 
-    def align_tests(self, cells):
+    def extract_tests(self, cells, resources):
         last_problem = None
         for cell in cells:
             if 'assignment' not in cell.metadata:
                 continue
 
-            cell_type = cell.metadata['assignment']['cell_type']
+            meta = cell.metadata['assignment']
+            cell_type = meta['cell_type']
             if cell_type == "grade":
                 last_problem = cell
+                problem = last_problem.metadata['assignment']['id']
+
+                if 'rubric' not in resources:
+                    resources['rubric'] = {}
+                if problem not in resources['rubric']:
+                    resources['rubric'][problem] = {
+                        'tests': [],
+                        'points': last_problem.metadata['assignment']['points']
+                    }
+
             elif cell_type == "autograder":
                 if not last_problem:
                     raise RuntimeError(
                         "autograding cell before any gradeable cells!")
 
-                if 'tests' not in last_problem.metadata['assignment']:
-                    last_problem.metadata['assignment']['tests'] = []
+                if 'tests' not in resources:
+                    resources['tests'] = {}
 
                 cell_id = cell.metadata['assignment']['id']
-                weight = 1 #cell.metadata['assignment']['weight']
-                last_problem.metadata['assignment']['tests'].append({
+                if cell_id in resources['tests']:
+                    raise ValueError(
+                        "test id '{}' is used more than once".format(cell_id))
+
+                resources['tests'][cell_id] = {
                     'id': cell_id,
-                    'weight': weight
-                })
+                    'weight': 1,
+                }
 
-    def update_weights(self, cells):
-        last_problem = None
-        for cell in cells:
-            if 'assignment' not in cell.metadata:
-                continue
+                resources['rubric'][problem]['tests'].append(cell_id)
 
-            cell_type = cell.metadata['assignment']['cell_type']
-            if cell_type == "grade":
-                last_problem = cell
-                tests = last_problem.metadata['assignment'].get('tests', [])
-                normalizer = float(np.sum([x['weight'] for x in tests]))
-                for x in tests:
-                    x['weight'] = x['weight'] / normalizer
+    def make_rubric(self, cells, resources):
+        tests = resources['tests']
+        rubric = resources['rubric']
 
-            elif cell_type == "autograder":
-                if not last_problem:
-                    raise RuntimeError(
-                        "autograding cell before any gradeable cells!")
-
-                #weight = cell.metadata['assignment']['weight'] / normalizer
-                weight = 1.0 / normalizer
-                total_points = last_problem.metadata['assignment']['points']
-                points = float(total_points) * weight
-                cell.metadata['assignment']['points'] = points
+        for problem in rubric:
+            problem_tests = rubric[problem]['tests']
+            weights = np.array([tests[t]['weight'] for t in problem_tests])
+            normalizer = float(np.sum(weights))
+            total_points = float(rubric[problem]['points'])
+            for test in problem_tests:
+                tests[test]['weight'] /= normalizer
+                tests[test]['points'] = total_points * tests[test]['weight']
 
     def filter_cells(self, cells):
         new_cells = []
@@ -167,29 +172,14 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         assignment_cell_type = meta.get('cell_type', '-')
 
         if assignment_cell_type == "autograder":
-            if 'tests' not in resources:
-                resources['tests'] = {}
-
-            if meta['id'] in resources['tests']:
-                raise ValueError(
-                    "test id '{}' is used more than once".format(meta['id']))
-
             if cell.cell_type == 'code':
-                resources['tests'][meta['id']] = cell.input
+                resources['tests'][meta['id']]['source'] = cell.input
                 if self.hide_autograder_cells:
                     cell.input = ""
             else:
-                resources['tests'][meta['id']] = cell.source
+                resources['tests'][meta['id']]['source'] = cell.source
                 if self.hide_autograder_cells:
                     cell.source = ""
-
-        elif assignment_cell_type == "grade":
-            if 'rubric' not in resources:
-                resources['rubric'] = {}
-            resources['rubric'][meta['id']] = {
-                "points": float(meta["points"]),
-                "tests": meta.get("tests", [])
-            }
 
         if self.solution:
             cell, resources = super(AssignmentPreprocessor, self)\
