@@ -10,5 +10,5 @@ Author: Jessica B. Hamrick
 > nbconvert preprocessor for executing cells, and being able to then
 > export to the notebook format.
 
-See the [documentation](docs/) for instructions on installation and
-usage.
+See the [documentation](docs/index.md) for instructions on
+installation and usage.
