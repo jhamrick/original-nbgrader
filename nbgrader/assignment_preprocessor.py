@@ -54,15 +54,32 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         if "celltoolbar" in nb.metadata:
             del nb.metadata['celltoolbar']
 
-        # figure out what the headings are for each cell
-        util.mark_headings(cells)
-
         # get the table of contents
         self.toc = util.get_toc(cells)
 
         # mark in the notebook metadata whether it's a solution or not
         nb.metadata['disable_assignment_toolbar'] = self.disable_toolbar
         nb.metadata['hide_autograder_cells'] = self.hide_autograder_cells
+
+        # figure out which tests go with which problems
+        last_problem = None
+        for cell in nb.worksheets[0].cells:
+            if 'assignment' not in cell.metadata:
+                continue
+
+            cell_type = cell.metadata['assignment']['cell_type']
+            if cell_type == "grade":
+                last_problem = cell
+            elif cell_type == "autograder":
+                if not last_problem:
+                    raise RuntimeError(
+                        "autograding cell before any gradeable cells!")
+
+                if 'tests' not in last_problem.metadata['assignment']:
+                    last_problem.metadata['assignment']['tests'] = []
+
+                cell_id = cell.metadata['assignment']['id']
+                last_problem.metadata['assignment']['tests'].append(cell_id)
 
         if self.solution:
             nb, resources = super(AssignmentPreprocessor, self).preprocess(
@@ -86,25 +103,6 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 continue
             new_cells.append(cell)
         return new_cells
-
-    def process_points(self, cell, points):
-        tree = cell.metadata.get('tree', '')
-        for level in tree:
-            if level not in points:
-                points[level] = {}
-            points = points[level]
-
-        meta = cell.metadata.get('assignment', {})
-        cell_points = meta.get('points', 0)
-        cell_id = meta.get('id', '')
-
-        if 'problems' not in points:
-            points['problems'] = []
-
-        points['problems'].append(dict(
-            id=cell_id,
-            points=float(cell_points),
-            type=cell.cell_type))
 
     def preprocess_cell(self, cell, resources, cell_index):
         kwargs = {
@@ -137,24 +135,26 @@ class AssignmentPreprocessor(ExecutePreprocessor):
             if 'tests' not in resources:
                 resources['tests'] = {}
 
-            test_id = meta.get('id', '')
-            if test_id in resources['tests']:
+            if meta['id'] in resources['tests']:
                 raise ValueError(
-                    "test id '{}' is used more than once".format(test_id))
+                    "test id '{}' is used more than once".format(meta['id']))
 
             if cell.cell_type == 'code':
-                resources['tests'][test_id] = cell.input
+                resources['tests'][meta['id']] = cell.input
                 if self.hide_autograder_cells:
                     cell.input = ""
             else:
-                resources['tests'][test_id] = cell.source
+                resources['tests'][meta['id']] = cell.source
                 if self.hide_autograder_cells:
                     cell.source = ""
 
         elif assignment_cell_type == "grade":
-            if 'points' not in resources:
-                resources['points'] = {}
-            self.process_points(cell, resources['points'])
+            if 'rubric' not in resources:
+                resources['rubric'] = {}
+            resources['rubric'][meta['id']] = {
+                "points": float(meta["points"]),
+                "tests": meta.get("tests", [])
+            }
 
         if self.solution:
             cell, resources = super(AssignmentPreprocessor, self)\
