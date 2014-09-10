@@ -62,17 +62,20 @@ def hello(name):
 When developing your assignment, you probably want to be working with
 the solutions, so you know that they are correct. Unfortunately, the
 templates make that difficult because they are not valid Python
-syntax. To resolve this, you can use the `%run_solutions` magic, which
-will treat template cells as if `solution == True`, allowing them to
-be run. To use the magic, create and run a cell with the following:
+syntax. To resolve this, you can use the `%render_template_as` magic,
+which takes a single argument of either `solution` or `release`. It
+will then treat template cells accordingly as if they were either for
+the solution or the release version, allowing them to be run. To use
+the magic, create and run a cell with the following:
 
 ```python
 %load_ext nbgrader
-%run_solutions
+%render_template_as <mode>
 ```
 
-(You probably also want to mark that cell as "Skip", so that it is not
-included in the release or solution version of the assignment).
+Where `<mode>` should be either `solution` or `release`. You may also
+want to mark that cell as "Skip", so that it is not included in the
+release or solution version of the assignment.
 
 ## nbconvert configuration
 

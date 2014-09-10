@@ -77,9 +77,10 @@ class SolutionInputTransformer(InputTransformer):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, solution, *args, **kwargs):
         super(SolutionInputTransformer, self).__init__(*args, **kwargs)
 
+        self.solution = solution
         self.env = jinja2.Environment()
         self._lines = []
 
@@ -92,13 +93,17 @@ class SolutionInputTransformer(InputTransformer):
         self._lines = []
         template = self.env.from_string(text)
         try:
-            return template.render(solution=True)
+            return template.render(solution=self.solution)
         except Exception as e:
             print("Failed to render jinja template: %s" % e, file=sys.stderr)
             return text
 
 
-def run_solutions(line):
+def render_template_as(line):
+    if line.strip() not in ("solution", "release"):
+        raise ValueError("invalid mode: {}".format(line.strip()))
+    solution = line.strip() == "solution"
+
     ip = get_ipython()
     transforms = ip.input_transformer_manager.python_line_transforms
-    transforms.append(SolutionInputTransformer())
+    transforms.append(SolutionInputTransformer(solution))
