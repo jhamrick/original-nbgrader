@@ -22,4 +22,4 @@ assignments more easily:
 
 ## Grading assignments
 
-Coming soon!
+* [Example](../examples/grade_assignment/)
