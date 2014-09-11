@@ -4,7 +4,7 @@ python:
 before_install:
   - git clone --recursive https://github.com/ipython/ipython.git
 install:
-  - cd ipython && pip install -e ".[notebook]" --user && cd ..
+  - cd ipython && pip install -e ".[notebook]" && cd ..
   - pip install -r requirements.txt
 script:
   - nosetests nbgrader
