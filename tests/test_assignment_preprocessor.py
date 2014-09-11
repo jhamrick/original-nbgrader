@@ -1,8 +1,8 @@
+import json
 from IPython.nbformat.current import read as read_nb
 from IPython.nbformat.current import NotebookNode
 from IPython.nbformat.current import new_code_cell, new_text_cell, new_notebook
 from nose.tools import assert_raises
-
 from nbgrader import AssignmentPreprocessor
 
 
@@ -297,6 +297,22 @@ YOUR ANSWER HERE
             "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello"),
             "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye")
         }
+
+    def test_extract_outputs_release(self):
+        """Are outputs excluded in release version?"""
+        self.preprocessor.solution = False
+        nb, resources = self.preprocessor._preprocess_nb(self.nb, {})
+        self.preprocessor._extract_outputs(resources)
+        assert 'outputs' not in resources
+
+    def test_extract_outputs_solution(self):
+        """Are outputs include in solution version?"""
+        self.preprocessor.solution = True
+        nb, resources = self.preprocessor._preprocess_nb(self.nb, {})
+        self.preprocessor._extract_outputs(resources)
+        assert 'outputs' in resources
+        assert resources['outputs']['rubric.json'] == json.dumps(resources['rubric'])
+        assert resources['outputs']['autograder_tests.json'] == json.dumps(resources['tests'])
 
     def test_preprocess_solution(self):
         """Does the solution preprocessor succeed?"""
