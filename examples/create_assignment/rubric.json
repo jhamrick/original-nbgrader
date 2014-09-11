@@ -1,24 +1,24 @@
 {
  "squares": {
-  "points": "2", 
+  "points": 2.0, 
   "tests": [
    "correct_squares", 
    "squares_invalid_input"
   ]
  }, 
  "sum_of_squares": {
-  "points": "1", 
+  "points": 1.0, 
   "tests": [
    "correct_sum_of_squares", 
    "sum_of_squares_uses_squares"
   ]
  }, 
  "sum_of_squares_equation": {
-  "points": "1", 
+  "points": 1.0, 
   "tests": []
  }, 
  "sum_of_squares_plot": {
-  "points": "1", 
+  "points": 1.0, 
   "tests": [
    "xaxis_limits", 
    "xlabel", 
