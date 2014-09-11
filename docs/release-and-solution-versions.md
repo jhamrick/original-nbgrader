@@ -88,15 +88,15 @@ something like this:
 ```python
 c = get_config()
 c.NbConvertApp.export_format = 'notebook'
-c.NbConvertApp.writer_class = 'nbgrader.AssignmentWriter'
+c.NbConvertApp.writer_class = 'FilesWriter'
 c.Exporter.preprocessors = ['nbgrader.AssignmentPreprocessor']
 ```
 
-Which tells nbconvert to convert to notebook format, to write out the
-converted file using `AssignmentWriter` from nbgrader, and to use the
-`AssignmentPreprocessor` from nbgrader. Then, you would use two different
-command line invocations to get either the release version or the
-solution version.
+Which tells nbconvert to convert to notebook format using the
+`AssignmentPreprocessor` from nbgrader, and then to write out the
+converted file using the `FilesWriter` from IPython. Then, you would
+use two different command line invocations to get either the release
+version or the solution version.
 
 ### Release version
 
@@ -118,7 +118,12 @@ ipython nbconvert master.ipynb --output=solution.ipynb --AssignmentPreprocessor.
 ```
 
 This will convert the `master.ipynb` notebook to a new notebook called
-`solution.ipynb`.
+`solution.ipynb`. It will additionally generate two json files:
+`rubric.json` and `autograder_tests.json`. The rubric file contains
+the names of problems to be graded, how much they are worth, and what
+autograder tests are associated with that problem. The tests file
+contains the actual source code of the tests, as well as their weight
+and how many points they are worth.
 
 ## Conversion options
 
@@ -146,31 +151,9 @@ may find useful:
   assignment's metadata.
 * `AssignmentPreprocessor.hide_autograder_cells` -- whether or not to
   hide autograding cells in release or solution version.
-
-These options can be specified on the command line, or in the
-`ipython_nbconvert_config.py` configuration file.
-
-### Assignment writer
-
-The `AssignmentWriter` also offers conversion options that you may
-find useful:
-
-* `AssignmentWriter.build_director` -- where to save the outputted
-  files to. This can be useful if converting multiple notebooks at
-  once (e.g., for an assignment in which each notebook corresponds to
-  a different problem).
-* `AssignmentWriter.files` -- files that the notebook(s) depend on
-  (e.g. images)
-* `AssignmentWriter.save_rubric` -- whether to save out a JSON file
-  with information about the different parts of the problem and how
-  much each is worth.
-* `AssignmentWriter.rubric_file` -- the name of the file to which the
+* `AssignmentPreprocessor.rubric_file` -- the name of the file to which the
   rubric should be saved, not including the ".json" extension.
-* `AssignmentWriter.save_autograder_tests` -- whether to save out a
-  JSON file with information about the autograder tests, including
-  their source code and how many points each test is worth (to allow
-  for partial credit).
-* `AssignmentWriter.autograder_test_file` -- the name of the file to
+* `AssignmentPreprocessor.autograder_test_file` -- the name of the file to
   which the autograder tests will be saved, not including the ".json"
   extension.
 

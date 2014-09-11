@@ -1,3 +1,4 @@
+import json
 from jinja2 import Environment
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
@@ -6,12 +7,18 @@ from IPython.nbformat.current import read as read_nb
 
 class AssignmentPreprocessor(ExecutePreprocessor):
 
-    solution = Bool(False, config=True, info_test="Whether to generate the release version, or the solutions")
-    header = Unicode("", config=True, info_test="Path to header notebook")
-    footer = Unicode("", config=True, info_test="Path to footer notebook")
-    title = Unicode("", config=True, info_test="Title of the assignment")
-    disable_toolbar = Bool(True, config=True, info_test="Whether to hide the assignment toolbar after conversion")
-    hide_autograder_cells = Bool(True, config=True, info_test="Whether to hide autograder cells after conversion")
+    solution = Bool(False, config=True, help="Whether to generate the release version, or the solutions")
+
+    header = Unicode("", config=True, help="Path to header notebook")
+    footer = Unicode("", config=True, help="Path to footer notebook")
+
+    title = Unicode("", config=True, help="Title of the assignment")
+
+    disable_toolbar = Bool(True, config=True, help="Whether to hide the assignment toolbar after conversion")
+    hide_autograder_cells = Bool(True, config=True, help="Whether to hide autograder cells after conversion")
+
+    rubric_file = Unicode("rubric", config=True, help="Filename to write JSON rubric to")
+    autograder_tests_file = Unicode("autograder_tests", config=True, help="Filename to write JSON autograder tests to")
 
     def __init__(self, *args, **kwargs):
         super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
@@ -217,6 +224,25 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         return nb, resources
 
+    def _extract_outputs(self, resources):
+        """Write out the rubric and tests if it's the solution version -- this
+        should be in the correct format for FilesWriter (i.e., we need
+        to dump to json strings since it writes files in binary
+        format).
+
+        """
+        if self.solution:
+            if 'outputs' not in resources:
+                resources['outputs'] = {}
+
+            rubric = resources['rubric']
+            filename = self.rubric_file + ".json"
+            resources['outputs'][filename] = json.dumps(rubric, indent=1)
+
+            tests = resources['tests']
+            filename = self.autograder_tests_file + ".json"
+            resources['outputs'][filename] = json.dumps(tests, indent=1)
+
     def preprocess(self, nb, resources):
         nb, resources = self._preprocess_nb(nb, resources)
 
@@ -226,6 +252,9 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         else:
             nb, resources = super(ExecutePreprocessor, self).preprocess(
                 nb, resources)
+
+        # extract rubric and tests
+        self._extract_outputs(resources)
 
         return nb, resources
 

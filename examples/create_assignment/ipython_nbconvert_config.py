@@ -1,7 +1,7 @@
 c = get_config()
 
 c.NbConvertApp.export_format = 'notebook'
-c.NbConvertApp.writer_class = 'nbgrader.AssignmentWriter'
+c.NbConvertApp.writer_class = 'FilesWriter'
 
 c.Exporter.preprocessors = ['nbgrader.AssignmentPreprocessor']
 
