@@ -1,8 +1,9 @@
 language: python
 python:
   - "2.7"
-install:
+before_install:
   - "git clone https://github.com/ipython/ipython.git; cd ipython; python setup.py install"
+install:
   - "pip install -r requirements.txt"
 script:
   - nosetests nbgrader
