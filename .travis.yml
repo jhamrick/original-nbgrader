@@ -8,5 +8,8 @@ install:
   - sudo apt-get install libzmq3-dev
   - cd ipython && pip install -e ".[notebook]" && cd ..
   - pip install -r requirements.txt
+  - pip install nose coverage coveralls
 script:
-  - nosetests
+  - nosetests --with-coverage --cover-erase --cover-package nbgrader
+after_success:
+  - coveralls
