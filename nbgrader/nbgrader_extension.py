@@ -1,8 +1,7 @@
 from __future__ import print_function
 
-import jinja2
 import sys
-
+from jinja2 import Environment
 from IPython.core.inputtransformer import InputTransformer
 
 
@@ -20,7 +19,10 @@ class SolutionInputTransformer(InputTransformer):
         super(SolutionInputTransformer, self).__init__(*args, **kwargs)
 
         self.solution = solution
-        self.env = jinja2.Environment()
+        self.env = Environment(
+            trim_blocks=True,
+            lstrip_blocks=True,
+            keep_trailing_newline=False)
         self._lines = []
 
     def push(self, line):
@@ -38,11 +40,15 @@ class SolutionInputTransformer(InputTransformer):
             return text
 
 
-def render_template_as(line):
+def _parse_argument(line):
     if line.strip() not in ("solution", "release"):
         raise ValueError("invalid mode: {}".format(line.strip()))
     solution = line.strip() == "solution"
+    return solution
 
+
+def render_template_as(line):
+    solution = _parse_argument(line)
     ip = get_ipython()
     transforms = ip.input_transformer_manager.physical_line_transforms
     transforms.insert(0, SolutionInputTransformer(solution))
