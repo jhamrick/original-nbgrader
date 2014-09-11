@@ -1,2 +1,4 @@
 .ipynb_checkpoints
 /nbgrader.egg-info/
+/cover/
+/.coverage
