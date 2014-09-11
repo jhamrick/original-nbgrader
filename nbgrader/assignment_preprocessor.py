@@ -268,7 +268,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         # render templates in code cells
         if cell.cell_type == 'code':
             template = self.env.from_string(cell.input)
-            rendered = template.render(**kwargs)
+            rendered = template.render(solution=self.solution)
             cell.outputs = []
             if 'prompt_number' in cell:
                 del cell['prompt_number']
