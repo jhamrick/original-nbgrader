@@ -126,12 +126,18 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 last_problem_id = last_problem.metadata['assignment']['id']
 
                 if last_problem_id in rubric:
-                    raise ValueError(
+                    raise RuntimeError(
                         "problem '{}' already exists!".format(
                             last_problem_id))
 
+                # extract the point value
+                points = last_problem.metadata['assignment']['points']
+                if points == '':
+                    points = 0
+                else:
+                    points = float(points)
+
                 # add the problem to the rubric
-                points = float(last_problem.metadata['assignment']['points'])
                 rubric[last_problem_id] = {
                     'tests': [],
                     'points': points
@@ -147,7 +153,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
                 cell_id = cell.metadata['assignment']['id']
                 if cell_id in tests:
-                    raise ValueError(
+                    raise RuntimeError(
                         "test id '{}' is used more than once".format(cell_id))
 
                 # add the test to the tests dictionary

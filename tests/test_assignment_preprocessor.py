@@ -1,5 +1,7 @@
 from IPython.nbformat.current import read as read_nb
 from IPython.nbformat.current import NotebookNode
+from nose.tools import assert_raises
+
 from nbgrader import AssignmentPreprocessor
 
 
@@ -104,9 +106,42 @@ class TestAssignmentPreprocessor(object):
             },
             "problem2": {
                 "tests": [],
-                "points": 2
+                "points": 0
             }
         }
+
+    def test_match_tests_double_problem(self):
+        """Is an error raised when a problem id is used twice?"""
+        cell1 = NotebookNode()
+        cell1.metadata = dict(assignment=dict(
+            cell_type="grade", id="foo", points=""))
+        cell2 = NotebookNode()
+        cell2.metadata = dict(assignment=dict(
+            cell_type="grade", id="foo", points=""))
+        cells = [cell1, cell2]
+        assert_raises(RuntimeError, self.preprocessor._match_tests, cells)
+
+    def test_match_tests_no_match(self):
+        """Is an error raised when an autograding cell cannot be matched?"""
+        cell = NotebookNode()
+        cell.metadata = dict(assignment=dict(
+            cell_type="autograder"))
+        cells = [cell]
+        assert_raises(RuntimeError, self.preprocessor._match_tests, cells)
+
+    def test_match_tests_double_test(self):
+        """Is an error raised when a test id is used twice?"""
+        cell1 = NotebookNode()
+        cell1.metadata = dict(assignment=dict(
+            cell_type="grade", id="foo", points=""))
+        cell2 = NotebookNode()
+        cell2.metadata = dict(assignment=dict(
+            cell_type="autograder", id="foo_test"))
+        cell3 = NotebookNode()
+        cell3.metadata = dict(assignment=dict(
+            cell_type="autograder", id="foo_test"))
+        cells = [cell1, cell2, cell3]
+        assert_raises(RuntimeError, self.preprocessor._match_tests, cells)
 
     def test_preprocess_nb_default_metadata(self):
         """Is the default metadata correctly set?"""
