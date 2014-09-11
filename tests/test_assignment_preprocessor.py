@@ -311,8 +311,11 @@ YOUR ANSWER HERE
         nb, resources = self.preprocessor._preprocess_nb(self.nb, {})
         self.preprocessor._extract_outputs(resources)
         assert 'outputs' in resources
-        assert resources['outputs']['rubric.json'] == json.dumps(resources['rubric'])
-        assert resources['outputs']['autograder_tests.json'] == json.dumps(resources['tests'])
+
+        rubric = json.dumps(resources['rubric'], indent=1)
+        tests = json.dumps(resources['tests'], indent=1)
+        assert resources['outputs']['rubric.json'] == rubric
+        assert resources['outputs']['autograder_tests.json'] == tests
 
     def test_preprocess_solution(self):
         """Does the solution preprocessor succeed?"""

@@ -237,11 +237,11 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
             rubric = resources['rubric']
             filename = self.rubric_file + ".json"
-            resources['outputs'][filename] = json.dumps(rubric)
+            resources['outputs'][filename] = json.dumps(rubric, indent=1)
 
             tests = resources['tests']
             filename = self.autograder_tests_file + ".json"
-            resources['outputs'][filename] = json.dumps(tests)
+            resources['outputs'][filename] = json.dumps(tests, indent=1)
 
     def preprocess(self, nb, resources):
         nb, resources = self._preprocess_nb(nb, resources)
