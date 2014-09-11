@@ -47,7 +47,8 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         return new_cells
 
-    def _get_assignment_cell_type(self, cell):
+    @staticmethod
+    def _get_assignment_cell_type(cell):
         """Get the assignment cell type from the assignment metadata."""
         if 'assignment' not in cell.metadata:
             return '-'
@@ -79,7 +80,8 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         return new_cells
 
-    def _get_toc(self, cells):
+    @staticmethod
+    def _get_toc(cells):
         """Extract a table of contents from the cells, based on the headings
         in the cells."""
 
@@ -130,9 +132,10 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                             last_problem_id))
 
                 # add the problem to the rubric
+                points = float(last_problem.metadata['assignment']['points'])
                 rubric[last_problem_id] = {
                     'tests': [],
-                    'points': last_problem.metadata['assignment']['points']
+                    'points': points
                 }
 
             # if it's an autograder cell, then we need to add it to
@@ -157,13 +160,8 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 # add the test to the list of tests for the problem
                 rubric[last_problem_id]['tests'].append(cell_id)
 
-        return tests, rubric
-
-    def _update_weights(self, tests, rubric):
-        """Normalize the test weights so that the weights of all tests for a
-        particular problem sum to one.
-
-        """
+        # now normalize the test weights so that the weights of all
+        # tests for a particular problem sum to one.
         for problem in rubric:
             # the total number of points this problem is worth
             total_points = float(rubric[problem]['points'])
@@ -180,7 +178,9 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 tests[test]['weight'] /= normalizer
                 tests[test]['points'] = total_points * tests[test]['weight']
 
-    def preprocess(self, nb, resources):
+        return tests, rubric
+
+    def _preprocess_nb(self, nb, resources):
         cells = nb.worksheets[0].cells
 
         # add in the header and the footer notebooks
@@ -210,15 +210,17 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         nb.metadata['disable_assignment_toolbar'] = self.disable_toolbar
         nb.metadata['hide_autograder_cells'] = self.hide_autograder_cells
 
+        return nb, resources
+
+    def preprocess(self, nb, resources):
+        nb, resources = self._preprocess_nb(nb, resources)
+
         if self.solution:
             nb, resources = super(AssignmentPreprocessor, self).preprocess(
                 nb, resources)
         else:
             nb, resources = super(ExecutePreprocessor, self).preprocess(
                 nb, resources)
-
-        # make the rubric
-        self._update_weights(resources['tests'], resources['rubric'])
 
         return nb, resources
 

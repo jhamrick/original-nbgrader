@@ -66,3 +66,67 @@ class TestAssignmentPreprocessor(object):
             cell_type = self.preprocessor._get_assignment_cell_type(cell)
             assert cell_type != 'skip'
             assert cell_type != 'solution'
+
+    def test_get_toc_no_heading_cells(self):
+        """Is the ToC empty if there are no heading cells?"""
+        toc = self.preprocessor._get_toc([])
+        assert toc == ""
+
+    def test_get_toc(self):
+        """Is the ToC correctly formatted?"""
+        correct_toc = """* <a href="#foo-bar">foo bar</a>
+\t* <a href="#bar">bar</a>
+\t\t* <a href="#baz">baz</a>
+\t\t* <a href="#quux">quux</a>
+\t* <a href="#foo2">foo2</a>"""
+        toc = self.preprocessor._get_toc(self.cells)
+        assert toc == correct_toc
+
+    def test_match_tests(self):
+        """Are the tests matched to the correct problems?"""
+        tests, rubric = self.preprocessor._match_tests(self.cells)
+        assert tests == {
+            "test1_for_problem1": {
+                "weight": 0.5,
+                "points": 1.5,
+                "problem": "problem1"
+            },
+            "test2_for_problem1": {
+                "weight": 0.5,
+                "points": 1.5,
+                "problem": "problem1"
+            }
+        }
+        assert rubric == {
+            "problem1": {
+                "tests": ["test1_for_problem1", "test2_for_problem1"],
+                "points": 3
+            },
+            "problem2": {
+                "tests": [],
+                "points": 2
+            }
+        }
+
+    def test_preprocess_nb_default_metadata(self):
+        """Is the default metadata correctly set?"""
+        nb, resources = self.preprocessor._preprocess_nb(self.nb, {})
+        assert 'celltoolbar' not in nb.metadata
+        assert nb.metadata['disable_assignment_toolbar']
+        assert nb.metadata['hide_autograder_cells']
+
+    def test_preprocess_nb_disable_toolbar(self):
+        """Is the toolbar disabled?"""
+        self.preprocessor.disable_toolbar = False
+        nb, resources = self.preprocessor._preprocess_nb(self.nb, {})
+        assert 'celltoolbar' not in nb.metadata
+        assert not nb.metadata['disable_assignment_toolbar']
+        assert nb.metadata['hide_autograder_cells']
+
+    def test_preprocess_nb_hide_autograder_cells(self):
+        """Are autograder cells hidden?"""
+        self.preprocessor.hide_autograder_cells = False
+        nb, resources = self.preprocessor._preprocess_nb(self.nb, {})
+        assert 'celltoolbar' not in nb.metadata
+        assert nb.metadata['disable_assignment_toolbar']
+        assert not nb.metadata['hide_autograder_cells']
