@@ -5,7 +5,7 @@ from IPython.utils.traitlets import Unicode
 from IPython.nbformat.current import new_output
 
 
-class Grader(ExecutePreprocessor):
+class GradingPreprocessor(ExecutePreprocessor):
 
     # configurable traitlets
     autograder_tests_file = Unicode(
@@ -28,7 +28,7 @@ class Grader(ExecutePreprocessor):
             del nb.metadata['hide_autograder_cells']
 
         # execute all the cells
-        nb, resources = super(Grader, self).preprocess(nb, resources)
+        nb, resources = super(GradingPreprocessor, self).preprocess(nb, resources)
 
         return nb, resources
 
@@ -44,7 +44,7 @@ class Grader(ExecutePreprocessor):
                 else:
                     cell.source = self.autograder_tests[test_id]['source']
 
-        cell, resources = super(Grader, self).preprocess_cell(
+        cell, resources = super(GradingPreprocessor, self).preprocess_cell(
             cell, resources, cell_index)
 
         if assignment_cell_type == "autograder":
