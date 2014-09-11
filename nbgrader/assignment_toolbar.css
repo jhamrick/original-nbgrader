@@ -1,9 +1,12 @@
-div.assignment-points, div.assignment-id {
-    margin-left: 0.5em;
-    display: none;
+div.assignment-controls {
+    display: flex;
 }
 
-input.assignment-points-input {
+div.assignment-points, div.assignment-weight, div.assignment-id {
+    margin-right: 0.5em;
+}
+
+input.assignment-points-input, input.assignment-weight-input {
     width: 3em;
     height: 22px;
     text-align: right;

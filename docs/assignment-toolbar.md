@@ -15,6 +15,11 @@ $([IPython.events]).on('app_initialized.NotebookApp', function() {
     require(["nbextensions/assignment"], function (assignment) {
         console.log('Assignment extension loaded');
         assignment.register(IPython.notebook);
+        // Optional: uncomment this line if you always want to display
+        // the notebook based on the assignment metadata, even if the
+        // toolbar isn't activated. This has the effect of coloring
+        // gradeable and autograder cells.
+        //assignment.display(IPython.notebook);
     });
 });
 ```
