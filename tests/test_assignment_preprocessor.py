@@ -1,5 +1,6 @@
 from IPython.nbformat.current import read as read_nb
 from IPython.nbformat.current import NotebookNode
+from IPython.nbformat.current import new_code_cell, new_text_cell, new_notebook
 from nose.tools import assert_raises
 
 from nbgrader import AssignmentPreprocessor
@@ -12,6 +13,27 @@ class TestAssignmentPreprocessor(object):
             self.nb = read_nb(fh, 'ipynb')
         self.cells = self.nb.worksheets[0].cells
         self.preprocessor = AssignmentPreprocessor()
+
+    @staticmethod
+    def _create_code_cell():
+        source = """# YOUR CODE HERE
+{% if solution %}
+print "hello"
+{% endif %}
+"""
+        cell = new_code_cell(input=source, prompt_number=2, outputs=["foo"])
+        return cell
+
+    @staticmethod
+    def _create_text_cell():
+        source = """{% if solution %}
+this is the answer!
+{% else %}
+YOUR ANSWER HERE
+{% endif %}
+"""
+        cell = new_text_cell('markdown', source=source)
+        return cell
 
     def test_get_assignment_cell_type_default(self):
         """Is the cell type '-' when the assignment metadata is missing?"""
@@ -165,3 +187,121 @@ class TestAssignmentPreprocessor(object):
         assert 'celltoolbar' not in nb.metadata
         assert nb.metadata['disable_assignment_toolbar']
         assert not nb.metadata['hide_autograder_cells']
+
+    def test_preprocess_code_cell_solution(self):
+        """Is the solution version of a code cell correctly preprocessed?"""
+        self.preprocessor.solution = True
+        self.preprocessor.toc = ""
+        cell = self._create_code_cell()
+
+        self.preprocessor._create_client()
+        cell, resources = self.preprocessor.preprocess_cell(cell, {}, 1)
+        self.preprocessor._shutdown_client()
+
+        output = NotebookNode()
+        output.stream = "stdout"
+        output.text = "hello\n"
+        output.output_type = "stream"
+
+        assert cell.input == """# YOUR CODE HERE\nprint "hello\""""
+        assert cell.outputs == [output]
+        assert cell.prompt_number == 1
+
+    def test_preprocess_code_cell_release(self):
+        """Is the release version of a code cell correctly preprocessed?"""
+        self.preprocessor.solution = False
+        self.preprocessor.toc = ""
+        cell = self._create_code_cell()
+
+        cell, resources = self.preprocessor.preprocess_cell(cell, {}, 1)
+        assert cell.input == """# YOUR CODE HERE"""
+        assert cell.outputs == []
+        assert 'prompt_number' not in cell
+
+    def test_preprocess_text_cell_solution(self):
+        """Is the solution version of a text cell correctly preprocessed?"""
+        self.preprocessor.solution = True
+        self.preprocessor.toc = ""
+        cell = self._create_text_cell()
+
+        cell, resources = self.preprocessor.preprocess_cell(cell, {}, 1)
+        assert cell.source == """this is the answer!"""
+
+    def test_preprocess_text_cell_release(self):
+        """Is the release version of a text cell correctly preprocessed?"""
+        self.preprocessor.solution = False
+        self.preprocessor.toc = ""
+        cell = self._create_text_cell()
+
+        cell, resources = self.preprocessor.preprocess_cell(cell, {}, 1)
+        assert cell.source == """YOUR ANSWER HERE"""
+
+    def test_preprocess_autograder_cells_hide(self):
+        """Are autograder cells properly preprocessed and hidden?"""
+        self.preprocessor.hide_autograder_cells = True
+        self.preprocessor.solution = False
+        cell1 = self._create_code_cell()
+        cell1.metadata = dict(assignment=dict(
+            cell_type="grade", id="foo", points=1))
+        cell2 = self._create_code_cell()
+        cell2.input = "# hello"
+        cell2.metadata = dict(assignment=dict(
+            cell_type="autograder", id="foo"))
+        cell3 = self._create_text_cell()
+        cell3.source = "goodbye"
+        cell3.metadata = dict(assignment=dict(
+            cell_type="autograder", id="bar"))
+
+        nb = new_notebook(worksheets=[NotebookNode()])
+        nb.worksheets[0].cells = [cell1, cell2, cell3]
+
+        nb, resources = self.preprocessor.preprocess(nb, {})
+        cell1, cell2, cell3 = nb.worksheets[0].cells
+        assert cell2.input == ""
+        assert cell3.source == ""
+
+        tests = resources['tests']
+        assert tests == {
+            "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello"),
+            "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye")
+        }
+
+    def test_preprocess_autograder_cells_show(self):
+        """Are autograder cells properly preprocessed and shown?"""
+        self.preprocessor.hide_autograder_cells = False
+        self.preprocessor.solution = False
+        cell1 = self._create_code_cell()
+        cell1.metadata = dict(assignment=dict(
+            cell_type="grade", id="foo", points=1))
+        cell2 = self._create_code_cell()
+        cell2.input = "# hello"
+        cell2.metadata = dict(assignment=dict(
+            cell_type="autograder", id="foo"))
+        cell3 = self._create_text_cell()
+        cell3.source = "goodbye"
+        cell3.metadata = dict(assignment=dict(
+            cell_type="autograder", id="bar"))
+
+        nb = new_notebook(worksheets=[NotebookNode()])
+        nb.worksheets[0].cells = [cell1, cell2, cell3]
+
+        nb, resources = self.preprocessor.preprocess(nb, {})
+        cell1, cell2, cell3 = nb.worksheets[0].cells
+        assert cell2.input == "# hello"
+        assert cell3.source == "goodbye"
+
+        tests = resources['tests']
+        assert tests == {
+            "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello"),
+            "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye")
+        }
+
+    def test_preprocess_solution(self):
+        """Does the solution preprocessor succeed?"""
+        self.preprocessor.solution = True
+        self.preprocessor.preprocess(self.nb, {})
+
+    def test_preprocess_release(self):
+        """Does the release preprocessor succeed?"""
+        self.preprocessor.solution = False
+        self.preprocessor.preprocess(self.nb, {})

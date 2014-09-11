@@ -271,7 +271,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                     cell.source = ""
 
         # if it's the solution version, execute the cell
-        if self.solution:
+        if cell.cell_type == 'code' and self.solution:
             cell, resources = super(AssignmentPreprocessor, self)\
                 .preprocess_cell(cell, resources, cell_index)
 
