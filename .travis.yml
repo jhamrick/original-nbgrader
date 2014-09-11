@@ -3,9 +3,8 @@ python:
   - "2.7"
 before_install:
   - git clone --recursive https://github.com/ipython/ipython.git
-  - cd ipython
-  - pip install -e ".[notebook]" --user
 install:
+  - cd ipython && pip install -e ".[notebook]" --user && cd ..
   - pip install -r requirements.txt
 script:
   - nosetests nbgrader
