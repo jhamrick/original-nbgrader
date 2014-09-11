@@ -2,7 +2,6 @@ from jinja2 import Environment
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
 from IPython.nbformat.current import read as read_nb
-import numpy as np
 
 
 class AssignmentPreprocessor(ExecutePreprocessor):
@@ -170,8 +169,8 @@ class AssignmentPreprocessor(ExecutePreprocessor):
             problem_tests = rubric[problem]['tests']
 
             # compute the normalizing constant for the weights
-            normalizer = float(np.sum(
-                np.array([tests[t]['weight'] for t in problem_tests])))
+            normalizer = float(sum(
+                [tests[t]['weight'] for t in problem_tests]))
 
             # update weights and points for each test
             for test in problem_tests:
