@@ -1,5 +1,8 @@
 # nbgrader
 
+[![Build Status](https://travis-ci.org/jhamrick/nbgrader.svg?branch=master)](https://travis-ci.org/jhamrick/nbgrader)
+[![Coverage Status](https://coveralls.io/repos/jhamrick/nbgrader/badge.png?branch=master)](https://coveralls.io/r/jhamrick/nbgrader?branch=master)
+
 IPython nbconvert preprocessor for generating and grading assignments
 in IPython notebooks.
 
