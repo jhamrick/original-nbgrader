@@ -11,5 +11,6 @@ install:
   - pip install nose coverage coveralls
 script:
   - nosetests --with-coverage --cover-erase --cover-package nbgrader
+  - make -C examples clean && make examples
 after_success:
   - coveralls
