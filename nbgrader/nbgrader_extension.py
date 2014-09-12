@@ -1,8 +1,8 @@
 from __future__ import print_function
 
 import sys
-from jinja2 import Environment
 from IPython.core.inputtransformer import InputTransformer
+from . import util
 
 
 class SolutionInputTransformer(InputTransformer):
@@ -19,11 +19,8 @@ class SolutionInputTransformer(InputTransformer):
         super(SolutionInputTransformer, self).__init__(*args, **kwargs)
 
         self.solution = solution
-        self.env = Environment(
-            trim_blocks=True,
-            lstrip_blocks=True,
-            keep_trailing_newline=False)
         self._lines = []
+        self.env = util.make_jinja_environment()
 
     def push(self, line):
         self._lines.append(line)

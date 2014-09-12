@@ -3,7 +3,7 @@ from IPython.nbformat.current import read as read_nb
 from IPython.nbformat.current import NotebookNode
 from IPython.nbformat.current import new_code_cell, new_text_cell, new_notebook
 from nose.tools import assert_raises
-from nbgrader import AssignmentPreprocessor
+from nbgrader import AssignmentPreprocessor, util
 
 
 class TestAssignmentPreprocessor(object):
@@ -35,20 +35,6 @@ YOUR ANSWER HERE
         cell = new_text_cell('markdown', source=source)
         return cell
 
-    def test_get_assignment_cell_type_default(self):
-        """Is the cell type '-' when the assignment metadata is missing?"""
-        cell = NotebookNode()
-        cell.metadata = {}
-        cell_type = self.preprocessor._get_assignment_cell_type(cell)
-        assert cell_type == '-'
-
-    def test_get_assignment_cell_type_given(self):
-        """Is the cell type correct when the assignment metadata is present?"""
-        cell = NotebookNode()
-        cell.metadata = dict(assignment=dict(cell_type="foo"))
-        cell_type = self.preprocessor._get_assignment_cell_type(cell)
-        assert cell_type == "foo"
-
     def test_concatenate_nothing(self):
         """Are the cells the same if there is no header/footer?"""
         cells = self.preprocessor._concatenate_notebooks(self.cells)
@@ -78,7 +64,7 @@ YOUR ANSWER HERE
         self.preprocessor.solution = True
         cells = self.preprocessor._filter_cells(self.cells)
         for cell in cells:
-            cell_type = self.preprocessor._get_assignment_cell_type(cell)
+            cell_type = util.get_assignment_cell_type(cell)
             assert cell_type != 'skip'
             assert cell_type != 'release'
 
@@ -87,7 +73,7 @@ YOUR ANSWER HERE
         self.preprocessor.solution = False
         cells = self.preprocessor._filter_cells(self.cells)
         for cell in cells:
-            cell_type = self.preprocessor._get_assignment_cell_type(cell)
+            cell_type = util.get_assignment_cell_type(cell)
             assert cell_type != 'skip'
             assert cell_type != 'solution'
 
@@ -111,13 +97,13 @@ YOUR ANSWER HERE
         tests, rubric = self.preprocessor._match_tests(self.cells)
         assert tests == {
             "test1_for_problem1": {
-                "weight": 0.5,
-                "points": 1.5,
+                "weight": 0.3333333333333333,
+                "points": 1,
                 "problem": "problem1"
             },
             "test2_for_problem1": {
-                "weight": 0.5,
-                "points": 1.5,
+                "weight": 0.6666666666666666,
+                "points": 2,
                 "problem": "problem1"
             }
         }

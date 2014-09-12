@@ -1,8 +1,8 @@
 import json
-from jinja2 import Environment
 from IPython.nbconvert.preprocessors import ExecutePreprocessor
 from IPython.utils.traitlets import Bool, Unicode
 from IPython.nbformat.current import read as read_nb
+from . import util
 
 
 class AssignmentPreprocessor(ExecutePreprocessor):
@@ -24,10 +24,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         super(AssignmentPreprocessor, self).__init__(*args, **kwargs)
 
         # create the jinja templating environment
-        self.env = Environment(
-            trim_blocks=True,
-            lstrip_blocks=True,
-            keep_trailing_newline=False)
+        self.env = util.make_jinja_environment()
 
     def _concatenate_notebooks(self, cells):
         """Concatenates the cells from the header and footer notebooks to the
@@ -53,13 +50,6 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         return new_cells
 
-    @staticmethod
-    def _get_assignment_cell_type(cell):
-        """Get the assignment cell type from the assignment metadata."""
-        if 'assignment' not in cell.metadata:
-            return '-'
-        return cell.metadata['assignment']['cell_type']
-
     def _filter_cells(self, cells):
         """Filter out cells, depending on the value of `self.solution`:
 
@@ -72,7 +62,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         for cell in cells:
 
             # get the cell type
-            cell_type = self._get_assignment_cell_type(cell)
+            cell_type = util.get_assignment_cell_type(cell)
 
             # determine whether the cell should be included
             if cell_type == 'skip':
@@ -124,7 +114,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
         last_problem_id = None
 
         for cell in cells:
-            cell_type = self._get_assignment_cell_type(cell)
+            cell_type = util.get_assignment_cell_type(cell)
 
             # if it's a grading cell, then it becomes the most recent
             # problem (to assign the autograding tests to)
@@ -163,9 +153,15 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                     raise RuntimeError(
                         "test id '{}' is used more than once".format(cell_id))
 
+                weight = cell.metadata['assignment'].get('weight', 1)
+                if weight == '':
+                    weight = 1
+                else:
+                    weight = float(weight)
+
                 # add the test to the tests dictionary
                 tests[cell_id] = {
-                    'weight': 1,
+                    'weight': weight,
                     'problem': last_problem_id
                 }
 
@@ -286,7 +282,7 @@ class AssignmentPreprocessor(ExecutePreprocessor):
 
         # if it's an autograder cell, then record the source and then
         # clear it (so it's not visible to students)
-        assignment_cell_type = self._get_assignment_cell_type(cell)
+        assignment_cell_type = util.get_assignment_cell_type(cell)
         if assignment_cell_type == "autograder":
             cell_id = cell.metadata['assignment']['id']
 
