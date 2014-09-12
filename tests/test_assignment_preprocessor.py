@@ -106,7 +106,7 @@ YOUR ANSWER HERE
                 "weight": 0.6666666666666666,
                 "points": 2,
                 "problem": "problem1",
-                "cell_type": "code"
+                "cell_type": "markdown"
             }
         }
         assert rubric == {

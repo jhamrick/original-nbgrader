@@ -1,4 +1,5 @@
 import json
+import math
 from IPython.nbformat.current import read as read_nb
 from IPython.nbformat.current import NotebookNode
 from IPython.nbformat.current import new_code_cell, new_text_cell, new_notebook
@@ -54,13 +55,21 @@ class TestAssignmentPreprocessor(object):
 
     def test_replace_test_source_text(self):
         """Is the text source properly replaced?"""
-        cell = new_text_cell("\n", metadata=dict(
-            assignment=dict(id="test1_for_problem1")))
+        cell = new_text_cell("markdown", metadata=dict(
+            assignment=dict(id="test2_for_problem1")))
         self.preprocessor._load_autograder_tests_file()
         self.preprocessor._replace_test_source(cell)
-        assert cell.source == "# blah blah blah"
-        assert cell.metadata['assignment']['weight'] == 0.3333333333333333
-        assert cell.metadata['assignment']['points'] == 1
+        assert cell.source == "# blah blah blah blah"
+        assert cell.metadata['assignment']['weight'] == 0.6666666666666666
+        assert cell.metadata['assignment']['points'] == 2
+
+    def test_replace_test_source_bad_cell_type(self):
+        """Is an error raised if the cell type has changed?"""
+        cell = new_text_cell("markdown", metadata=dict(
+            assignment=dict(id="test1_for_problem1")))
+        self.preprocessor._load_autograder_tests_file()
+        assert_raises(
+            RuntimeError, self.preprocessor._replace_test_source, cell)
 
     def test_get_score_error(self):
         """Is the score zero when there was an error?"""
@@ -83,15 +92,34 @@ class TestAssignmentPreprocessor(object):
         assert score == 1
         assert total_score == 1
 
+    def test_get_score_nan(self):
+        """Is the score nan when the cell is text?"""
+        cell = new_text_cell("markdown", metadata=dict(
+            assignment=dict(id="test1_for_problem1")))
+        cell.outputs = []
+        self.preprocessor._load_autograder_tests_file()
+        score, total_score = self.preprocessor._get_score(cell)
+        assert math.isnan(score)
+        assert total_score == 1
+
     def test_add_score_output(self):
         """Is the score properly formatted and added to the cell outputs?"""
         cell = NotebookNode()
+        cell.cell_type = 'code'
         cell.outputs = []
         self.preprocessor._add_score_output(cell, 10, 15)
         output = cell.outputs[0]
         assert output.stream == "stdout"
         assert output.output_type == "stream"
         assert output.text == "Score: 10 / 15"
+
+    def test_add_score_output_text(self):
+        """Is the score properly handled when the cell is a markdown cell?"""
+        cell = NotebookNode()
+        cell.cell_type = 'markdown'
+        cell.outputs = []
+        self.preprocessor._add_score_output(cell, 10, 15)
+        assert cell['outputs'] == []
 
     def test_preprocess(self):
         """Does the preprocessor run without failing?"""
