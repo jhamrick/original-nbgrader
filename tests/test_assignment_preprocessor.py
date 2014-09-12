@@ -103,7 +103,7 @@ YOUR ANSWER HERE
             },
             "test2_for_problem1": {
                 "weight": 0.6666666666666666,
-                "Points": 2,
+                "points": 2,
                 "problem": "problem1"
             }
         }

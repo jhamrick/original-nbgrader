@@ -26,27 +26,20 @@ class GradingPreprocessor(ExecutePreprocessor):
         if 'hide_autograder_cells' in nb.metadata:
             del nb.metadata['hide_autograder_cells']
 
-    def preprocess(self, nb, resources):
-        """Grade the notebook"""
-        self._load_autograder_tests_file()
-        self._clear_metadata(nb)
-
-        nb, resources = super(GradingPreprocessor, self).preprocess(
-            nb, resources)
-
-        return nb, resources
-
     def _replace_test_source(self, cell):
         """Replace the source of an autograder cell with that from the
         autograder tests file.
 
         """
-        cell_id = cell.metadata['assignment']['id']
+        meta = cell.metadata['assignment']
+        cell_id = meta['id']
         if cell_id in self.autograder_tests:
             if cell.cell_type == 'code':
                 cell.input = self.autograder_tests[cell_id]['source']
             else:
                 cell.source = self.autograder_tests[cell_id]['source']
+            meta['weight'] = self.autograder_tests[cell_id]['weight']
+            meta['points'] = self.autograder_tests[cell_id]['points']
 
     def _get_score(self, cell):
         """Compute the score from an autograder test, after the cell has been
@@ -72,6 +65,16 @@ class GradingPreprocessor(ExecutePreprocessor):
             'stream',
             output_text='Score: {} / {}'.format(score, total_score))
         cell.outputs.insert(0, output)
+
+    def preprocess(self, nb, resources):
+        """Grade the notebook"""
+        self._load_autograder_tests_file()
+        self._clear_metadata(nb)
+
+        nb, resources = super(GradingPreprocessor, self).preprocess(
+            nb, resources)
+
+        return nb, resources
 
     def preprocess_cell(self, cell, resources, cell_index):
         """Execute the cell, possibly reporting a score if it is an
