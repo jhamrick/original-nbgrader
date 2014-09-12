@@ -97,13 +97,13 @@ YOUR ANSWER HERE
         tests, rubric = self.preprocessor._match_tests(self.cells)
         assert tests == {
             "test1_for_problem1": {
-                "weight": 0.5,
-                "points": 1.5,
+                "weight": 0.3333333333333333,
+                "points": 1,
                 "problem": "problem1"
             },
             "test2_for_problem1": {
-                "weight": 0.5,
-                "points": 1.5,
+                "weight": 0.6666666666666666,
+                "Points": 2,
                 "problem": "problem1"
             }
         }

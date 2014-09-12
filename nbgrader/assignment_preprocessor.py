@@ -153,9 +153,15 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                     raise RuntimeError(
                         "test id '{}' is used more than once".format(cell_id))
 
+                weight = cell.metadata['assignment'].get('weight', 1)
+                if weight == '':
+                    weight = 1
+                else:
+                    weight = float(weight)
+
                 # add the test to the tests dictionary
                 tests[cell_id] = {
-                    'weight': 1,
+                    'weight': weight,
                     'problem': last_problem_id
                 }
 
