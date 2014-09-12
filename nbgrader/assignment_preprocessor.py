@@ -162,7 +162,8 @@ class AssignmentPreprocessor(ExecutePreprocessor):
                 # add the test to the tests dictionary
                 tests[cell_id] = {
                     'weight': weight,
-                    'problem': last_problem_id
+                    'problem': last_problem_id,
+                    'cell_type': cell.cell_type
                 }
 
                 # add the test to the list of tests for the problem
