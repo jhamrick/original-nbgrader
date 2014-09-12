@@ -99,12 +99,14 @@ YOUR ANSWER HERE
             "test1_for_problem1": {
                 "weight": 0.3333333333333333,
                 "points": 1,
-                "problem": "problem1"
+                "problem": "problem1",
+                "cell_type": "code"
             },
             "test2_for_problem1": {
                 "weight": 0.6666666666666666,
                 "points": 2,
-                "problem": "problem1"
+                "problem": "problem1",
+                "cell_type": "markdown"
             }
         }
         assert rubric == {
@@ -120,10 +122,10 @@ YOUR ANSWER HERE
 
     def test_match_tests_double_problem(self):
         """Is an error raised when a problem id is used twice?"""
-        cell1 = NotebookNode()
+        cell1 = new_code_cell()
         cell1.metadata = dict(assignment=dict(
             cell_type="grade", id="foo", points=""))
-        cell2 = NotebookNode()
+        cell2 = new_text_cell("markdown")
         cell2.metadata = dict(assignment=dict(
             cell_type="grade", id="foo", points=""))
         cells = [cell1, cell2]
@@ -131,7 +133,7 @@ YOUR ANSWER HERE
 
     def test_match_tests_no_match(self):
         """Is an error raised when an autograding cell cannot be matched?"""
-        cell = NotebookNode()
+        cell = new_code_cell()
         cell.metadata = dict(assignment=dict(
             cell_type="autograder"))
         cells = [cell]
@@ -139,13 +141,13 @@ YOUR ANSWER HERE
 
     def test_match_tests_double_test(self):
         """Is an error raised when a test id is used twice?"""
-        cell1 = NotebookNode()
+        cell1 = new_code_cell()
         cell1.metadata = dict(assignment=dict(
             cell_type="grade", id="foo", points=""))
-        cell2 = NotebookNode()
+        cell2 = new_code_cell()
         cell2.metadata = dict(assignment=dict(
             cell_type="autograder", id="foo_test"))
-        cell3 = NotebookNode()
+        cell3 = new_text_cell("markdown")
         cell3.metadata = dict(assignment=dict(
             cell_type="autograder", id="foo_test"))
         cells = [cell1, cell2, cell3]
@@ -248,8 +250,8 @@ YOUR ANSWER HERE
 
         tests = resources['tests']
         assert tests == {
-            "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello"),
-            "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye")
+            "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello", cell_type="code"),
+            "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye", cell_type="markdown")
         }
 
     def test_preprocess_autograder_cells_show(self):
@@ -278,8 +280,8 @@ YOUR ANSWER HERE
 
         tests = resources['tests']
         assert tests == {
-            "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello"),
-            "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye")
+            "foo": dict(weight=0.5, points=0.5, problem="foo", source="# hello", cell_type="code"),
+            "bar": dict(weight=0.5, points=0.5, problem="foo", source="goodbye", cell_type="markdown")
         }
 
     def test_extract_outputs_release(self):
